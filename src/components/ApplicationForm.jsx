@@ -22,10 +22,20 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMsg('');
     const newApp = { ...formData };
-    onSubmit(newApp, resumeFileObj, screenshotFileObjs);
+    try {
+      await onSubmit(newApp, resumeFileObj, screenshotFileObjs);
+    } catch (err) {
+      setErrorMsg(err.message || 'An error occurred while saving.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -216,9 +226,17 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
             )}
           </div>
 
+          {errorMsg && (
+            <div style={{ padding: '12px', background: 'rgba(220, 38, 38, 0.1)', border: '1px solid rgba(220, 38, 38, 0.5)', color: '#ef4444', borderRadius: '8px', marginTop: '20px' }}>
+              {errorMsg}
+            </div>
+          )}
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '30px' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save Application</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Application'}
+            </button>
           </div>
         </form>
       </div>

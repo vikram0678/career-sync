@@ -160,15 +160,17 @@ function App() {
 
   const handleAddApplication = async (newApp, resumeFileObj, screenshotFileObjs) => {
     if (!user) return;
+    
+    let finalResumeUrl = newApp.resumeUrl || '';
+    let finalScreenshots = [];
+
     try {
-      let finalResumeUrl = newApp.resumeUrl || '';
       if (resumeFileObj) {
         const resumeRef = ref(storage, `resumes/${user.uid}/${Date.now()}_${resumeFileObj.name}`);
         await uploadBytes(resumeRef, resumeFileObj);
         finalResumeUrl = await getDownloadURL(resumeRef);
       }
 
-      let finalScreenshots = [];
       if (screenshotFileObjs && screenshotFileObjs.length > 0) {
         for (const file of screenshotFileObjs) {
           const ssRef = ref(storage, `screenshots/${user.uid}/${Date.now()}_${file.name}`);
@@ -177,7 +179,12 @@ function App() {
           finalScreenshots.push(url);
         }
       }
+    } catch (storageError) {
+      console.error("Storage upload failed", storageError);
+      throw new Error("File upload failed. Ensure Firebase Storage is enabled and rules allow writes, or try submitting without files.");
+    }
 
+    try {
       await addDoc(collection(db, 'applications'), {
         ...newApp,
         resumeUrl: finalResumeUrl,
@@ -188,6 +195,7 @@ function App() {
       setFormType(false);
     } catch (error) {
       console.error("Error adding application: ", error);
+      throw new Error("Failed to save application to database.");
     }
   };
 
