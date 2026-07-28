@@ -11,8 +11,12 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
     status: 'applied',
     applicationType: initialType || 'self',
     salary: '',
-    resumeLink: ''
+    resumeLink: '',
+    screenshots: []
   });
+  
+  const [resumeFileObj, setResumeFileObj] = useState(null);
+  const [screenshotFileObjs, setScreenshotFileObjs] = useState([]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,13 +24,8 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate screenshot handling and ID generation for now
-    const newApp = {
-      ...formData,
-      id: Date.now().toString(),
-      screenshots: []
-    };
-    onSubmit(newApp);
+    const newApp = { ...formData };
+    onSubmit(newApp, resumeFileObj, screenshotFileObjs);
   };
 
   return (
@@ -148,6 +147,7 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => {
                   if (e.target.files[0]) {
+                    setResumeFileObj(e.target.files[0]);
                     setFormData({
                       ...formData,
                       resumeUsed: e.target.files[0].name,
@@ -197,7 +197,9 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
               multiple
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
-                  const newScreenshots = Array.from(e.target.files).map(file => URL.createObjectURL(file));
+                  const files = Array.from(e.target.files);
+                  setScreenshotFileObjs([...screenshotFileObjs, ...files]);
+                  const newScreenshots = files.map(file => URL.createObjectURL(file));
                   setFormData({
                     ...formData,
                     screenshots: [...(formData.screenshots || []), ...newScreenshots]

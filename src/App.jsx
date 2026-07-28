@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut } from 'lucide-react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { auth, provider, db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, provider, db, storage } from './firebase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
 import ApplicationTable from './components/ApplicationTable';
@@ -131,11 +132,30 @@ function App() {
     };
   }, []);
 
-  const handleAddApplication = async (newApp) => {
+  const handleAddApplication = async (newApp, resumeFileObj, screenshotFileObjs) => {
     if (!user) return;
     try {
+      let finalResumeUrl = newApp.resumeUrl || '';
+      if (resumeFileObj) {
+        const resumeRef = ref(storage, `resumes/${user.uid}/${Date.now()}_${resumeFileObj.name}`);
+        await uploadBytes(resumeRef, resumeFileObj);
+        finalResumeUrl = await getDownloadURL(resumeRef);
+      }
+
+      let finalScreenshots = [];
+      if (screenshotFileObjs && screenshotFileObjs.length > 0) {
+        for (const file of screenshotFileObjs) {
+          const ssRef = ref(storage, `screenshots/${user.uid}/${Date.now()}_${file.name}`);
+          await uploadBytes(ssRef, file);
+          const url = await getDownloadURL(ssRef);
+          finalScreenshots.push(url);
+        }
+      }
+
       await addDoc(collection(db, 'applications'), {
         ...newApp,
+        resumeUrl: finalResumeUrl,
+        screenshots: finalScreenshots,
         userId: user.uid,
         addedAt: Date.now()
       });
