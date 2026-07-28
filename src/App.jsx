@@ -176,7 +176,11 @@ function App() {
       
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      return data.secure_url;
+      let finalUrl = data.secure_url;
+      if (file.type === 'application/pdf' && !finalUrl.endsWith('.pdf')) {
+        finalUrl = finalUrl + '.pdf';
+      }
+      return finalUrl;
     };
 
     try {

@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { X, Calendar, Globe, FileText, Briefcase, Download, Eye } from 'lucide-react';
 
 function FileViewerModal({ fileUrl, fileType, onClose }) {
+  let displayUrl = fileUrl;
+  if (fileType === 'pdf' && displayUrl && displayUrl.includes('cloudinary') && !displayUrl.endsWith('.pdf')) {
+    displayUrl = displayUrl + '.pdf';
+  }
+
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
       <div className="glass modal-content glass-panel" style={{ maxWidth: '90vw', width: '100%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
@@ -14,7 +19,7 @@ function FileViewerModal({ fileUrl, fileType, onClose }) {
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.4)', borderRadius: '8px' }}>
           {fileType === 'pdf' ? (
             <iframe 
-              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`} 
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(displayUrl)}&embedded=true`} 
               style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }} 
               title="Resume PDF Viewer" 
             />
@@ -97,7 +102,7 @@ function ApplicationDetails({ app, onClose, onUpdateStatus }) {
                       <Eye size={16} /> View
                     </button>
                     <a 
-                      href={app.resumeUrl} 
+                      href={app.resumeUrl && app.resumeUrl.includes('cloudinary') && !app.resumeUrl.endsWith('.pdf') ? app.resumeUrl + '.pdf' : app.resumeUrl} 
                       target="_blank"
                       download
                       className="btn btn-primary"
