@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw } from 'lucide-react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, provider, db, storage } from './firebase';
 import ApplicationForm from './components/ApplicationForm';
@@ -95,6 +95,9 @@ function App() {
   
   const [goal, setGoal] = useState(null);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+  
+  const [recentlyDeleted, setRecentlyDeleted] = useState(null);
+  const deleteTimerRef = useRef(null);
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
@@ -197,6 +200,32 @@ function App() {
       }
     } catch (error) {
       console.error("Error updating status: ", error);
+    }
+  };
+
+  const handleDelete = async (app) => {
+    try {
+      await deleteDoc(doc(db, 'applications', app.id));
+      setRecentlyDeleted(app);
+      if (selectedApp && selectedApp.id === app.id) setSelectedApp(null);
+      
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+      deleteTimerRef.current = setTimeout(() => {
+        setRecentlyDeleted(null);
+      }, 10000); // 10 seconds to undo
+    } catch (err) {
+      console.error("Error deleting", err);
+    }
+  };
+
+  const handleUndoDelete = async () => {
+    if (!recentlyDeleted) return;
+    try {
+      await setDoc(doc(db, 'applications', recentlyDeleted.id), recentlyDeleted);
+      setRecentlyDeleted(null);
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    } catch (err) {
+      console.error("Error undoing", err);
     }
   };
 
@@ -398,7 +427,7 @@ function App() {
                   <FilterPanel filters={collegeFilters} setFilters={setCollegeFilters} availableRoles={collegeRoles} />
                 )}
                 
-                <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} />
+                <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
               </div>
               
               {/* Self Column */}
@@ -419,7 +448,7 @@ function App() {
                   <FilterPanel filters={selfFilters} setFilters={setSelfFilters} availableRoles={selfRoles} />
                 )}
 
-                <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} />
+                <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
               </div>
             </div>
           </main>

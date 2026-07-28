@@ -1,6 +1,6 @@
-import { Globe, Calendar, FileText } from 'lucide-react';
+import { Globe, Calendar, FileText, Trash2 } from 'lucide-react';
 
-function ApplicationTable({ applications, onAppClick }) {
+function ApplicationTable({ applications, onAppClick, onDelete }) {
   if (!applications || applications.length === 0) {
     return (
       <div className="glass glass-panel empty-state" style={{ padding: '30px 10px' }}>
@@ -18,6 +18,7 @@ function ApplicationTable({ applications, onAppClick }) {
             <th>Company</th>
             <th>Date</th>
             <th>Status</th>
+            <th style={{ width: '40px' }}></th>
           </tr>
         </thead>
         <tbody>
@@ -53,6 +54,19 @@ function ApplicationTable({ applications, onAppClick }) {
                 <span className={`status-badge status-${app.status}`}>
                   {app.status}
                 </span>
+              </td>
+              <td>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ padding: '6px', minWidth: 'auto', background: 'transparent', border: 'none', boxShadow: 'none' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if(onDelete) onDelete(app);
+                  }}
+                  title="Delete Application"
+                >
+                  <Trash2 size={16} color="var(--text-muted)" />
+                </button>
               </td>
             </tr>
           ))}
