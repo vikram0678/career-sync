@@ -13,7 +13,11 @@ function FileViewerModal({ fileUrl, fileType, onClose }) {
         </div>
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.4)', borderRadius: '8px' }}>
           {fileType === 'pdf' ? (
-            <iframe src={fileUrl} style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }} title="Resume PDF Viewer" />
+            <iframe 
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`} 
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }} 
+              title="Resume PDF Viewer" 
+            />
           ) : (
             <img src={fileUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
           )}
