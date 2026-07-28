@@ -93,9 +93,9 @@ function App() {
   const [formType, setFormType] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   
-  const [goal, setGoal] = useState({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
+  const [goal, setGoal] = useState(null);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
-
+  
   const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
   const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
   
@@ -120,6 +120,8 @@ function App() {
         getDoc(prefRef).then((docSnap) => {
           if (docSnap.exists() && docSnap.data().goal) {
             setGoal(docSnap.data().goal);
+          } else {
+            setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
           }
         });
       } else {
