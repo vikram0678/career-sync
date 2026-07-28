@@ -212,7 +212,7 @@ function App() {
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
       deleteTimerRef.current = setTimeout(() => {
         setRecentlyDeleted(null);
-      }, 10000); // 10 seconds to undo
+      }, 20000); // 20 seconds to undo
     } catch (err) {
       console.error("Error deleting", err);
     }
@@ -489,6 +489,27 @@ function App() {
           onClose={() => setSelectedApp(null)}
           onUpdateStatus={handleUpdateStatus}
         />
+      )}
+
+      {recentlyDeleted && (
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          background: '#ffffff', color: '#0f172a', padding: '12px 24px',
+          borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 9999,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: '2px solid var(--accent-cyan)'
+        }}>
+          <span>Deleted application for <strong>{recentlyDeleted.company}</strong></span>
+          <button 
+            onClick={handleUndoDelete}
+            style={{ 
+              background: 'var(--accent-cyan)', border: 'none', color: '#ffffff', 
+              fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', borderRadius: '999px'
+            }}
+          >
+            <RotateCcw size={16} /> Undo
+          </button>
+        </div>
       )}
       </div>
     </div>
