@@ -329,10 +329,9 @@ function App() {
 
       <div className="app-container" style={{ flex: 1 }}>
 
-      <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
-
       {activeTab === 'dashboard' ? (
         <>
+          <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
           <div className="stats-container">
             <div className="glass glass-panel stat-card">
               <span className="stat-label">Total Applied</span>
