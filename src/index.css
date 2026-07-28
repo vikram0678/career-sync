@@ -6,6 +6,7 @@
   --ambient-light: rgba(255, 255, 255, 0.3);
   --ambient-accent: rgba(0, 180, 216, 0.15);
   --modal-overlay: rgba(212, 241, 249, 0.6);
+  --option-bg: #ffffff;
   
   --text-main: #1a365d;
   --text-muted: #4a5568;
@@ -24,6 +25,7 @@
   --ambient-light: rgba(96, 165, 250, 0.05);
   --ambient-accent: rgba(34, 211, 238, 0.05);
   --modal-overlay: rgba(0, 0, 0, 0.6);
+  --option-bg: #0f172a;
   
   --text-main: #ffffff;
   --text-muted: #94a3b8;
@@ -281,6 +283,11 @@ h2 {
   background: var(--glass-highlight);
   border-color: var(--accent-cyan);
   box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.2);
+}
+
+select.form-control option {
+  background-color: var(--option-bg);
+  color: var(--text-main);
 }
 
 /* Modals */
