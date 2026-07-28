@@ -268,39 +268,52 @@ function App() {
           <h1 style={{ margin: 0, fontSize: '1.8rem', letterSpacing: '-0.5px' }}>CareerSync</h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flex: 1 }}>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            style={{ 
-              background: activeTab === 'dashboard' ? 'rgba(0, 119, 182, 0.08)' : 'transparent',
-              color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
-              border: 'none',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              fontWeight: '700',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            Dashboard
-          </button>
-          <button 
-            onClick={() => setActiveTab('calendar')}
-            style={{ 
-              background: activeTab === 'calendar' ? 'rgba(0, 119, 182, 0.08)' : 'transparent',
-              color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
-              border: 'none',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              fontWeight: '700',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            Calendar
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'center', flex: 1 }}>
+          <div style={{ 
+            display: 'flex', 
+            background: 'rgba(0,0,0,0.06)', 
+            padding: '4px', 
+            borderRadius: '12px',
+            width: '280px',
+            justifyContent: 'space-between'
+          }}>
+            <button 
+              onClick={() => setActiveTab('dashboard')}
+              style={{ 
+                background: activeTab === 'dashboard' ? 'white' : 'transparent',
+                color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                border: 'none',
+                padding: '8px 0',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1,
+                boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab('calendar')}
+              style={{ 
+                background: activeTab === 'calendar' ? 'white' : 'transparent',
+                color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                border: 'none',
+                padding: '8px 0',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1,
+                boxShadow: activeTab === 'calendar' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Calendar
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1 }}>
