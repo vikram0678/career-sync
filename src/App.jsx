@@ -249,57 +249,62 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="glass" style={{ 
+      <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: '12px 24px',
-        marginBottom: '32px',
-        position: 'sticky',
-        top: '16px',
-        zIndex: 100,
-        borderRadius: '100px'
+        padding: '16px 0',
+        marginBottom: '40px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem', marginBottom: 0 }}>CareerSync</h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: '2.2rem', marginBottom: 0 }}>CareerSync</h1>
         </div>
-        <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.1)', padding: '6px', borderRadius: '100px' }}>
+
+        <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.4)', padding: '6px', borderRadius: '14px', backdropFilter: 'blur(10px)' }}>
           <button 
-            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : ''}`} 
+            className="btn" 
             style={{ 
-              padding: '8px 20px', 
+              padding: '8px 24px', 
               border: 'none', 
-              borderRadius: '100px',
-              background: activeTab === 'dashboard' ? 'linear-gradient(135deg, #00b4d8 0%, #0077b6 100%)' : 'transparent',
-              color: activeTab === 'dashboard' ? 'white' : 'var(--text-main)',
-              fontWeight: activeTab === 'dashboard' ? '700' : '600'
+              borderRadius: '10px',
+              background: activeTab === 'dashboard' ? 'white' : 'transparent',
+              color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
+              fontWeight: activeTab === 'dashboard' ? '700' : '600',
+              boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s ease'
             }}
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
           </button>
           <button 
-            className={`btn ${activeTab === 'calendar' ? 'btn-primary' : ''}`} 
+            className="btn" 
             style={{ 
-              padding: '8px 20px', 
+              padding: '8px 24px', 
               border: 'none', 
-              borderRadius: '100px',
-              background: activeTab === 'calendar' ? 'linear-gradient(135deg, #00b4d8 0%, #0077b6 100%)' : 'transparent',
-              color: activeTab === 'calendar' ? 'white' : 'var(--text-main)',
-              fontWeight: activeTab === 'calendar' ? '700' : '600'
+              borderRadius: '10px',
+              background: activeTab === 'calendar' ? 'white' : 'transparent',
+              color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
+              fontWeight: activeTab === 'calendar' ? '700' : '600',
+              boxShadow: activeTab === 'calendar' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s ease'
             }}
             onClick={() => setActiveTab('calendar')}
           >
             Calendar
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }} className="user-name">
-            {user.displayName?.split(' ')[0]}
-          </span>
-          <img src={user.photoURL} alt="Profile" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
-          <button onClick={() => signOut(auth)} className="btn" style={{ padding: '6px', minWidth: 'auto', background: 'transparent', border: 'none', boxShadow: 'none' }} title="Log out">
-            <LogOut size={20} color="var(--text-muted)" />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1' }}>
+              {user.displayName?.split(' ')[0]}
+            </span>
+          </div>
+          <img src={user.photoURL} alt="Profile" style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+          <button onClick={() => signOut(auth)} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', marginLeft: '4px' }} title="Log out">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
