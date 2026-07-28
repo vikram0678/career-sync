@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut } from 'lucide-react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun } from 'lucide-react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -95,6 +95,20 @@ function App() {
   
   const [goal, setGoal] = useState(null);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
   
   const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
   const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
@@ -317,11 +331,19 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1 }}>
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)} 
+            className="btn btn-secondary" 
+            style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} 
+            title="Toggle theme"
+          >
+            {isDarkMode ? <Sun size={18} color="var(--accent-orange)" /> : <Moon size={18} color="var(--text-muted)" />}
+          </button>
           <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.95rem' }}>
             {user.displayName?.split(' ')[0]}
           </span>
           <img src={user.photoURL} alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-          <button onClick={() => signOut(auth)} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', background: 'rgba(255,255,255,0.6)', border: 'none', boxShadow: 'none' }} title="Log out">
+          <button onClick={() => signOut(auth)} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} title="Log out">
             <LogOut size={18} color="var(--text-muted)" />
           </button>
         </div>
