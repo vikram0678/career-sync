@@ -249,31 +249,57 @@ function App() {
 
   return (
     <div className="app-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <header className="glass" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '12px 24px',
+        marginBottom: '32px',
+        position: 'sticky',
+        top: '16px',
+        zIndex: 100,
+        borderRadius: '100px'
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h1 style={{ margin: 0 }}>CareerSync</h1>
+          <h1 style={{ margin: 0, fontSize: '2rem', marginBottom: 0 }}>CareerSync</h1>
         </div>
-        <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.1)', padding: '6px', borderRadius: '100px' }}>
           <button 
-            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', border: 'none' }}
+            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : ''}`} 
+            style={{ 
+              padding: '8px 20px', 
+              border: 'none', 
+              borderRadius: '100px',
+              background: activeTab === 'dashboard' ? 'linear-gradient(135deg, #00b4d8 0%, #0077b6 100%)' : 'transparent',
+              color: activeTab === 'dashboard' ? 'white' : 'var(--text-main)',
+              fontWeight: activeTab === 'dashboard' ? '700' : '600'
+            }}
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
           </button>
           <button 
-            className={`btn ${activeTab === 'calendar' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', border: 'none' }}
+            className={`btn ${activeTab === 'calendar' ? 'btn-primary' : ''}`} 
+            style={{ 
+              padding: '8px 20px', 
+              border: 'none', 
+              borderRadius: '100px',
+              background: activeTab === 'calendar' ? 'linear-gradient(135deg, #00b4d8 0%, #0077b6 100%)' : 'transparent',
+              color: activeTab === 'calendar' ? 'white' : 'var(--text-main)',
+              fontWeight: activeTab === 'calendar' ? '700' : '600'
+            }}
             onClick={() => setActiveTab('calendar')}
           >
             Calendar
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.4)', padding: '6px 16px', borderRadius: '999px', backdropFilter: 'blur(10px)' }}>
-          <img src={user.photoURL} alt="Profile" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-          <span style={{ fontWeight: '700', color: 'var(--accent-blue)', display: 'none' }} className="user-name">{user.displayName}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }} className="user-name">
+            {user.displayName?.split(' ')[0]}
+          </span>
+          <img src={user.photoURL} alt="Profile" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
           <button onClick={() => signOut(auth)} className="btn" style={{ padding: '6px', minWidth: 'auto', background: 'transparent', border: 'none', boxShadow: 'none' }} title="Log out">
-            <LogOut size={18} color="var(--accent-blue)" />
+            <LogOut size={20} color="var(--text-muted)" />
           </button>
         </div>
       </header>
