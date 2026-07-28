@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter } from 'lucide-react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut } from 'lucide-react';
+import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { auth, provider, db } from './firebase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
 import ApplicationTable from './components/ApplicationTable';
@@ -61,7 +64,28 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
   );
 }
 
+function LoginScreen() {
+  const handleLogin = () => {
+    signInWithPopup(auth, provider).catch(error => console.error("Login error", error));
+  };
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-gradient)', backgroundSize: '200% 200%', animation: 'auroraFlow 20s ease infinite' }}>
+      <div className="glass glass-panel" style={{ textAlign: 'center', padding: '48px', maxWidth: '400px', width: '90%' }}>
+        <h1 style={{ marginBottom: '16px' }}>CareerSync</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Organize your job hunt and track your momentum.</p>
+        <button className="btn btn-primary" onClick={handleLogin} style={{ width: '100%', fontSize: '1.1rem', padding: '16px' }}>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
   const [activeTab, setActiveTab] = useState('dashboard');
   const [applications, setApplications] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -78,69 +102,58 @@ function App() {
   const [showSelfFilters, setShowSelfFilters] = useState(false);
 
   useEffect(() => {
-    setApplications([
-      {
-        id: '1',
-        addedAt: 1,
-        applicationType: 'college',
-        role: 'Frontend Engineer Intern',
-        website: 'Google (Campus)',
-        careerPageUrl: 'https://careers.google.com/',
-        resumeUsed: 'Resume_v3_Tech.pdf',
-        appliedDate: '2026-07-20',
-        jobDescription: 'Build beautiful UIs...',
-        status: 'applied',
-        salary: '120k',
-        screenshots: []
-      },
-      {
-        id: '2',
-        addedAt: 2,
-        applicationType: 'self',
-        role: 'Full Stack Developer',
-        website: 'LinkedIn (Startup)',
-        careerPageUrl: 'https://linkedin.com/jobs/view/12345',
-        resumeUsed: 'Resume_v4_FullStack.pdf',
-        appliedDate: '2026-07-15',
-        jobDescription: 'Seeking a Full Stack Developer...',
-        status: 'interview',
-        salary: '140k',
-        screenshots: []
-      },
-      {
-        id: '3',
-        addedAt: 3,
-        applicationType: 'self',
-        role: 'Associate Engineer - AI/ML with Python',
-        website: 'HARMAN',
-        careerPageUrl: 'https://jobsearch.harman.com/en_US/careers/ApplicationReview?jobId=32407',
-        resumeUsed: '',
-        appliedDate: new Date().toISOString().split('T')[0],
-        jobDescription: 'Applied using protocol websites / job portal.',
-        status: 'applied',
-        salary: '',
-        screenshots: []
+    let unsubscribeSnapshot = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      
+      if (currentUser) {
+        const q = query(collection(db, 'applications'), where('userId', '==', currentUser.uid));
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setApplications(apps);
+        });
+      } else {
+        setApplications([]);
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
-    ]);
+    });
     
     setTasks([
       { id: 't1', title: 'Follow up with Google recruiter', date: '2026-07-22', time: '10:00', completed: true },
       { id: 't2', title: 'Prepare for LinkedIn interview', date: '2026-07-16', time: '14:30', completed: false }
     ]);
+    
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
   }, []);
 
-  const handleAddApplication = (newApp) => {
-    const appToAdd = { ...newApp, addedAt: Date.now() };
-    setApplications([appToAdd, ...applications]);
-    setFormType(false);
+  const handleAddApplication = async (newApp) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'applications'), {
+        ...newApp,
+        userId: user.uid,
+        addedAt: Date.now()
+      });
+      setFormType(false);
+    } catch (error) {
+      console.error("Error adding application: ", error);
+    }
   };
 
-  const handleUpdateStatus = (id, newStatus) => {
-    setApplications(apps => apps.map(app => 
-      app.id === id ? { ...app, status: newStatus } : app
-    ));
-    if (selectedApp && selectedApp.id === id) {
-      setSelectedApp({ ...selectedApp, status: newStatus });
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      const appRef = doc(db, 'applications', id);
+      await updateDoc(appRef, { status: newStatus });
+      if (selectedApp && selectedApp.id === id) {
+        setSelectedApp({ ...selectedApp, status: newStatus });
+      }
+    } catch (error) {
+      console.error("Error updating status: ", error);
     }
   };
 
@@ -189,10 +202,15 @@ function App() {
   const selfApps = applyFilters(rawSelfApps, selfFilters);
   const selfRoles = Array.from(new Set(rawSelfApps.map(a => a.role)));
 
+  if (authLoading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white' }}>Loading CareerSync...</div>;
+  if (!user) return <LoginScreen />;
+
   return (
     <div className="app-container">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>CareerSync</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <h1 style={{ margin: 0 }}>CareerSync</h1>
+        </div>
         <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px' }}>
           <button 
             className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`} 
@@ -207,6 +225,13 @@ function App() {
             onClick={() => setActiveTab('calendar')}
           >
             Calendar
+          </button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.4)', padding: '6px 16px', borderRadius: '999px', backdropFilter: 'blur(10px)' }}>
+          <img src={user.photoURL} alt="Profile" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+          <span style={{ fontWeight: '700', color: 'var(--accent-blue)', display: 'none' }} className="user-name">{user.displayName}</span>
+          <button onClick={() => signOut(auth)} className="btn" style={{ padding: '6px', minWidth: 'auto', background: 'transparent', border: 'none', boxShadow: 'none' }} title="Log out">
+            <LogOut size={18} color="var(--accent-blue)" />
           </button>
         </div>
       </header>
