@@ -164,24 +164,35 @@ function App() {
     let finalResumeUrl = newApp.resumeUrl || '';
     let finalScreenshots = [];
 
+    const uploadToCloudinary = async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'career_sync');
+      
+      const res = await fetch('https://api.cloudinary.com/v1_1/yinwc51x/auto/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      return data.secure_url;
+    };
+
     try {
       if (resumeFileObj) {
-        const resumeRef = ref(storage, `resumes/${user.uid}/${Date.now()}_${resumeFileObj.name}`);
-        await uploadBytes(resumeRef, resumeFileObj);
-        finalResumeUrl = await getDownloadURL(resumeRef);
+        finalResumeUrl = await uploadToCloudinary(resumeFileObj);
       }
 
       if (screenshotFileObjs && screenshotFileObjs.length > 0) {
         for (const file of screenshotFileObjs) {
-          const ssRef = ref(storage, `screenshots/${user.uid}/${Date.now()}_${file.name}`);
-          await uploadBytes(ssRef, file);
-          const url = await getDownloadURL(ssRef);
+          const url = await uploadToCloudinary(file);
           finalScreenshots.push(url);
         }
       }
-    } catch (storageError) {
-      console.error("Storage upload failed", storageError);
-      throw new Error("File upload failed. Ensure Firebase Storage is enabled and rules allow writes, or try submitting without files.");
+    } catch (uploadError) {
+      console.error("Cloudinary upload failed", uploadError);
+      throw new Error("File upload failed. Please try again or submit without files.");
     }
 
     try {
