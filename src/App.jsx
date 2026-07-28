@@ -368,7 +368,7 @@ function App() {
         <GoalForm 
           initialGoal={goal} 
           onClose={() => setIsGoalFormOpen(false)} 
-          onSubmit={(newGoal) => { setGoal(newGoal); setIsGoalFormOpen(false); }} 
+          onSubmit={handleGoalSave} 
         />
       )}
 
