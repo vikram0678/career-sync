@@ -354,7 +354,7 @@ h2 {
 /* Split View Dashboard */
 .split-view {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr; /* Full width vertically stacked */
   gap: 32px;
 }
 
