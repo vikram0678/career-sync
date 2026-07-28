@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut } from 'lucide-react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, provider, db, storage } from './firebase';
 import ApplicationForm from './components/ApplicationForm';
@@ -115,6 +115,13 @@ function App() {
           const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setApplications(apps);
         });
+
+        const prefRef = doc(db, 'user_preferences', currentUser.uid);
+        getDoc(prefRef).then((docSnap) => {
+          if (docSnap.exists() && docSnap.data().goal) {
+            setGoal(docSnap.data().goal);
+          }
+        });
       } else {
         setApplications([]);
         if (unsubscribeSnapshot) unsubscribeSnapshot();
@@ -175,6 +182,19 @@ function App() {
     } catch (error) {
       console.error("Error updating status: ", error);
     }
+  };
+
+  const handleGoalSave = async (newGoal) => {
+    setGoal(newGoal);
+    if (user) {
+      const prefRef = doc(db, 'user_preferences', user.uid);
+      try {
+        await setDoc(prefRef, { goal: newGoal }, { merge: true });
+      } catch (error) {
+        console.error("Error saving goal: ", error);
+      }
+    }
+    setIsGoalFormOpen(false);
   };
 
   const handleAddTask = (newTask) => {
