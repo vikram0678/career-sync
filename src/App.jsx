@@ -285,7 +285,7 @@ function App() {
         <div style={{ display: 'flex', justifyContent: 'center', flex: 1 }}>
           <div style={{ 
             display: 'flex', 
-            background: 'rgba(0,0,0,0.06)', 
+            background: 'var(--glass-border)', 
             padding: '4px', 
             borderRadius: '12px',
             width: '280px',
@@ -294,7 +294,7 @@ function App() {
             <button 
               onClick={() => setActiveTab('dashboard')}
               style={{ 
-                background: activeTab === 'dashboard' ? 'white' : 'transparent',
+                background: activeTab === 'dashboard' ? 'var(--glass-bg)' : 'transparent',
                 color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
                 border: 'none',
                 padding: '8px 0',
@@ -312,7 +312,7 @@ function App() {
             <button 
               onClick={() => setActiveTab('calendar')}
               style={{ 
-                background: activeTab === 'calendar' ? 'white' : 'transparent',
+                background: activeTab === 'calendar' ? 'var(--glass-bg)' : 'transparent',
                 color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
                 border: 'none',
                 padding: '8px 0',
