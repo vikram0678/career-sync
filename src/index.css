@@ -100,9 +100,10 @@ h2 {
 
 /* App Container */
 .app-container {
-  max-width: 1600px;
+  max-width: 1800px;
+  width: 95%;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 0;
 }
 
 /* Frutiger Aero Glass Panels */
@@ -354,7 +355,7 @@ h2 {
 /* Split View Dashboard */
 .split-view {
   display: grid;
-  grid-template-columns: 1fr; /* Full width vertically stacked */
+  grid-template-columns: 1fr 1fr;
   gap: 32px;
 }
 
