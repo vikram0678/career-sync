@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw } from 'lucide-react';
-import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, provider, db, storage } from './firebase';
+import { supabase } from './supabase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
 import ApplicationTable from './components/ApplicationTable';
@@ -66,8 +63,9 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
 }
 
 function LoginScreen() {
-  const handleLogin = () => {
-    signInWithPopup(auth, provider).catch(error => console.error("Login error", error));
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (error) console.error("Login error", error);
   };
 
   return (
@@ -120,30 +118,50 @@ function App() {
   const [showSelfFilters, setShowSelfFilters] = useState(false);
 
   useEffect(() => {
-    let unsubscribeSnapshot = null;
+    let applicationsChannel = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    const fetchApplications = async (userId) => {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('userId', userId);
+      if (data && !error) setApplications(data);
+    };
+
+    const fetchGoal = async (userId) => {
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('goal')
+        .eq('userId', userId)
+        .maybeSingle();
+      if (data && data.goal) {
+        setGoal(data.goal);
+      } else {
+        setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if(!session) setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUser = session?.user;
       setUser(currentUser);
       setAuthLoading(false);
       
       if (currentUser) {
-        const q = query(collection(db, 'applications'), where('userId', '==', currentUser.uid));
-        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-          const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setApplications(apps);
-        });
+        fetchApplications(currentUser.id);
+        fetchGoal(currentUser.id);
 
-        const prefRef = doc(db, 'user_preferences', currentUser.uid);
-        getDoc(prefRef).then((docSnap) => {
-          if (docSnap.exists() && docSnap.data().goal) {
-            setGoal(docSnap.data().goal);
-          } else {
-            setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
-          }
-        });
+        applicationsChannel = supabase.channel('public:applications')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `userId=eq.${currentUser.id}` }, payload => {
+            fetchApplications(currentUser.id);
+          })
+          .subscribe();
       } else {
         setApplications([]);
-        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        if (applicationsChannel) supabase.removeChannel(applicationsChannel);
       }
     });
     
@@ -153,8 +171,8 @@ function App() {
     ]);
     
     return () => {
-      unsubscribeAuth();
-      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      subscription?.unsubscribe();
+      if (applicationsChannel) supabase.removeChannel(applicationsChannel);
     };
   }, []);
 
@@ -164,49 +182,42 @@ function App() {
     let finalResumeUrl = newApp.resumeUrl || '';
     let finalScreenshots = [];
 
-    const uploadToCloudinary = async (file) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'career_sync');
+    const uploadToSupabase = async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
       
-      const res = await fetch('https://api.cloudinary.com/v1_1/yinwc51x/auto/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const { error } = await supabase.storage.from('resumes').upload(filePath, file);
+      if (error) throw error;
       
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      let finalUrl = data.secure_url;
-      if (file.type === 'application/pdf' && !finalUrl.endsWith('.pdf')) {
-        finalUrl = finalUrl + '.pdf';
-      }
-      return finalUrl;
+      const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
+      return data.publicUrl;
     };
 
     try {
       if (resumeFileObj) {
-        finalResumeUrl = await uploadToCloudinary(resumeFileObj);
+        finalResumeUrl = await uploadToSupabase(resumeFileObj);
       }
-
       if (screenshotFileObjs && screenshotFileObjs.length > 0) {
         for (const file of screenshotFileObjs) {
-          const url = await uploadToCloudinary(file);
+          const url = await uploadToSupabase(file);
           finalScreenshots.push(url);
         }
       }
     } catch (uploadError) {
-      console.error("Cloudinary upload failed", uploadError);
+      console.error("Supabase upload failed", uploadError);
       throw new Error("File upload failed. Please try again or submit without files.");
     }
 
     try {
-      await addDoc(collection(db, 'applications'), {
+      const { error } = await supabase.from('applications').insert([{
         ...newApp,
         resumeUrl: finalResumeUrl,
         screenshots: finalScreenshots,
-        userId: user.uid,
+        userId: user.id,
         addedAt: Date.now()
-      });
+      }]);
+      if (error) throw error;
       setFormType(false);
     } catch (error) {
       console.error("Error adding application: ", error);
@@ -216,8 +227,7 @@ function App() {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      const appRef = doc(db, 'applications', id);
-      await updateDoc(appRef, { status: newStatus });
+      await supabase.from('applications').update({ status: newStatus }).eq('id', id);
       if (selectedApp && selectedApp.id === id) {
         setSelectedApp({ ...selectedApp, status: newStatus });
       }
@@ -228,7 +238,7 @@ function App() {
 
   const handleDelete = async (app) => {
     try {
-      await deleteDoc(doc(db, 'applications', app.id));
+      await supabase.from('applications').delete().eq('id', app.id);
       setRecentlyDeleted(app);
       if (selectedApp && selectedApp.id === app.id) setSelectedApp(null);
       
@@ -244,7 +254,7 @@ function App() {
   const handleUndoDelete = async () => {
     if (!recentlyDeleted) return;
     try {
-      await setDoc(doc(db, 'applications', recentlyDeleted.id), recentlyDeleted);
+      await supabase.from('applications').insert([{ ...recentlyDeleted }]);
       setRecentlyDeleted(null);
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     } catch (err) {
@@ -255,9 +265,8 @@ function App() {
   const handleGoalSave = async (newGoal) => {
     setGoal(newGoal);
     if (user) {
-      const prefRef = doc(db, 'user_preferences', user.uid);
       try {
-        await setDoc(prefRef, { goal: newGoal }, { merge: true });
+        await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal }], { onConflict: 'userId' });
       } catch (error) {
         console.error("Error saving goal: ", error);
       }
@@ -392,10 +401,10 @@ function App() {
             {isDarkMode ? <Sun size={18} color="var(--accent-orange)" /> : <Moon size={18} color="var(--text-muted)" />}
           </button>
           <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.95rem' }}>
-            {user.displayName?.split(' ')[0]}
+            {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
           </span>
-          <img src={user.photoURL} alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-          <button onClick={() => signOut(auth)} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} title="Log out">
+          <img src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'} alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+          <button onClick={() => supabase.auth.signOut()} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} title="Log out">
             <LogOut size={18} color="var(--text-muted)" />
           </button>
         </div>
