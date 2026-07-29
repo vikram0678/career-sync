@@ -135,6 +135,14 @@ function App() {
       if (data && !error) setApplications(data);
     };
 
+    const fetchTasks = async (userId) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('userId', userId);
+      if (data && !error) setTasks(data);
+    };
+
     const fetchGoal = async (userId) => {
       const { data } = await supabase
         .from('user_preferences')
@@ -159,6 +167,7 @@ function App() {
       
       if (currentUser) {
         fetchApplications(currentUser.id);
+        fetchTasks(currentUser.id);
         fetchGoal(currentUser.id);
 
         applicationsChannel = supabase.channel('public:applications')
@@ -168,14 +177,10 @@ function App() {
           .subscribe();
       } else {
         setApplications([]);
+        setTasks([]);
         if (applicationsChannel) supabase.removeChannel(applicationsChannel);
       }
     });
-    
-    setTasks([
-      { id: 't1', title: 'Follow up with Google recruiter', date: '2026-07-22', time: '10:00', completed: true },
-      { id: 't2', title: 'Prepare for LinkedIn interview', date: '2026-07-16', time: '14:30', completed: false }
-    ]);
     
     return () => {
       subscription?.unsubscribe();
@@ -281,22 +286,47 @@ function App() {
     setIsGoalFormOpen(false);
   };
 
-  const handleAddTask = (newTask) => {
-    setTasks([...tasks, newTask]);
+  const handleAddTask = async (newTask) => {
+    if (!user) return;
+    const taskData = { ...newTask, userId: user.id, createdAt: Date.now() };
+    delete taskData.id; 
+    try {
+      const { data, error } = await supabase.from('tasks').insert([taskData]).select();
+      if (!error && data) setTasks([...tasks, data[0]]);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleEditTask = (updatedTask) => {
-    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+  const handleEditTask = async (updatedTask) => {
+    try {
+      const { error } = await supabase.from('tasks').update({ title: updatedTask.title, time: updatedTask.time }).eq('id', updatedTask.id);
+      if (!error) setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter(t => t.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (!error) setTasks(tasks.filter(t => t.id !== taskId));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleToggleTask = (taskId) => {
-    setTasks(tasks.map(t => 
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    ));
+  const handleToggleTask = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    try {
+      const { error } = await supabase.from('tasks').update({ completed: !task.completed }).eq('id', taskId);
+      if (!error) {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const stats = {
