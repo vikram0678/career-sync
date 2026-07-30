@@ -182,9 +182,42 @@ function App() {
       }
     });
     
+    const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+    const checkInactivity = () => {
+      const lastActivity = localStorage.getItem('lastActivity');
+      if (lastActivity && Date.now() - parseInt(lastActivity) > INACTIVITY_LIMIT_MS) {
+        supabase.auth.signOut();
+        localStorage.removeItem('lastActivity');
+      }
+    };
+
+    // Check immediately on load (in case they haven't opened the site in a day)
+    checkInactivity();
+
+    // Set up activity tracking
+    const updateActivity = () => {
+      localStorage.setItem('lastActivity', Date.now().toString());
+    };
+
+    // Update activity on mount
+    updateActivity();
+
+    // Listen for user interactions to reset the 1-day timer
+    window.addEventListener('mousemove', updateActivity, { passive: true });
+    window.addEventListener('keydown', updateActivity, { passive: true });
+    window.addEventListener('scroll', updateActivity, { passive: true });
+
+    // Check periodically if the tab is left open
+    const interval = setInterval(checkInactivity, 60000); // Check every minute
+
     return () => {
       subscription?.unsubscribe();
       if (applicationsChannel) supabase.removeChannel(applicationsChannel);
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+      clearInterval(interval);
     };
   }, []);
 
