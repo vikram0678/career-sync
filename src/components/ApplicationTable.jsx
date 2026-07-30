@@ -11,7 +11,7 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
 
   return (
     <div className="table-container">
-      <table className="jobs-table">
+      <table className="applications-table">
         <thead>
           <tr>
             <th>Role</th>
@@ -28,8 +28,8 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 <div className="job-role-cell" style={{ fontSize: '1rem' }}>{app.role}</div>
               </td>
               <td>
-                <div className="job-company-cell">
-                  <Globe size={14} />
+                <div className="job-company-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Globe size={14} color="var(--text-muted)" />
                   {app.careerPageUrl ? (
                     <a 
                       href={app.careerPageUrl} 
