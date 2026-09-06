@@ -10,13 +10,13 @@ function GoalCountdown({ goal, onEditClick }) {
 
     const calculateTimeLeft = () => {
       const difference = new Date(goal.targetDate) - new Date();
-      
+
       if (difference <= 0) {
         setIsExpired(true);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
-      
+
       setIsExpired(false);
       setTimeLeft({
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
@@ -54,6 +54,7 @@ function GoalCountdown({ goal, onEditClick }) {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <Clock size={24} color="var(--accent-cyan)" />
               <div className="time-block">
                 <span className="time-value">{timeLeft.days}</span>
                 <span className="time-label">Days</span>
@@ -76,8 +77,8 @@ function GoalCountdown({ goal, onEditClick }) {
             </div>
           )}
         </div>
-        
-        <button 
+
+        <button
           className="btn btn-secondary goal-edit-btn"
           onClick={onEditClick}
           title="Edit Goal"

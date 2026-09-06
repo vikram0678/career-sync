@@ -1,0 +1,27 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs automatically every 5 days at 00:00 UTC
+    - cron: '0 0 */5 * *'
+  # Allows you to click a button in GitHub to test it manually anytime!
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⚡ Ping Supabase REST API
+        run: |
+          echo "Pinging Supabase to prevent inactivity pause..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/")
+          
+          echo "Supabase responded with HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 500 ]; then
+            echo "✅ Supabase is active and healthy!"
+          else
+            echo "⚠️ Unexpected response: $HTTP_STATUS"
+          fi

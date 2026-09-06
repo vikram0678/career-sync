@@ -51,7 +51,7 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Min Salary</label>
         <input type="text" name="salary" value={localFilters.salary} onChange={handleChange} className="form-control" placeholder="e.g. 100k" style={{ padding: '6px' }} />
       </div>
-      
+
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
         <button onClick={handleApply} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Apply</button>
         {Object.values(localFilters).some(v => v !== '') && (
@@ -64,9 +64,10 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
 
 function LoginScreen() {
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ 
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        redirectTo: window.location.origin,
         queryParams: {
           prompt: 'select_account'
         }
@@ -91,19 +92,19 @@ function LoginScreen() {
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [applications, setApplications] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [formType, setFormType] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
-  
+
   const [goal, setGoal] = useState(null);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
-  
+
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
   const deleteTimerRef = useRef(null);
-  
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
@@ -117,10 +118,10 @@ function App() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
-  
+
   const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
   const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
-  
+
   const [showCollegeFilters, setShowCollegeFilters] = useState(false);
   const [showSelfFilters, setShowSelfFilters] = useState(false);
 
@@ -157,21 +158,21 @@ function App() {
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if(!session) setAuthLoading(false);
+      if (!session) setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user;
       setUser(currentUser);
       setAuthLoading(false);
-      
+
       if (currentUser) {
         fetchApplications(currentUser.id);
         fetchTasks(currentUser.id);
         fetchGoal(currentUser.id);
 
         applicationsChannel = supabase.channel('public:applications')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `userId=eq.${currentUser.id}` }, payload => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `userId=eq.${currentUser.id}` }, () => {
             fetchApplications(currentUser.id);
           })
           .subscribe();
@@ -181,7 +182,7 @@ function App() {
         if (applicationsChannel) supabase.removeChannel(applicationsChannel);
       }
     });
-    
+
     const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
     const checkInactivity = () => {
@@ -223,7 +224,7 @@ function App() {
 
   const handleAddApplication = async (newApp, resumeFileObj, screenshotFileObjs) => {
     if (!user) return;
-    
+
     let finalResumeUrl = newApp.resumeUrl || '';
     let finalScreenshots = [];
 
@@ -231,10 +232,10 @@ function App() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
-      
+
       const { error } = await supabase.storage.from('resumes').upload(filePath, file);
       if (error) throw error;
-      
+
       const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
       return data.publicUrl;
     };
@@ -286,7 +287,7 @@ function App() {
       await supabase.from('applications').delete().eq('id', app.id);
       setRecentlyDeleted(app);
       if (selectedApp && selectedApp.id === app.id) setSelectedApp(null);
-      
+
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
       deleteTimerRef.current = setTimeout(() => {
         setRecentlyDeleted(null);
@@ -322,7 +323,7 @@ function App() {
   const handleAddTask = async (newTask) => {
     if (!user) return;
     const taskData = { ...newTask, userId: user.id, createdAt: Date.now() };
-    delete taskData.id; 
+    delete taskData.id;
     try {
       const { data, error } = await supabase.from('tasks').insert([taskData]).select();
       if (!error && data) setTasks([...tasks, data[0]]);
@@ -380,7 +381,7 @@ function App() {
   };
 
   const sortedApplications = [...applications].sort((a, b) => b.addedAt - a.addedAt);
-  
+
   const rawCollegeApps = sortedApplications.filter(a => a.applicationType === 'college');
   const collegeApps = applyFilters(rawCollegeApps, collegeFilters);
   const collegeRoles = Array.from(new Set(rawCollegeApps.map(a => a.role)));
@@ -414,17 +415,17 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', flex: 1 }}>
-          <div style={{ 
-            display: 'flex', 
-            background: 'var(--glass-border)', 
-            padding: '4px', 
+          <div style={{
+            display: 'flex',
+            background: 'var(--glass-border)',
+            padding: '4px',
             borderRadius: '12px',
             width: '280px',
             justifyContent: 'space-between'
           }}>
-            <button 
+            <button
               onClick={() => setActiveTab('dashboard')}
-              style={{ 
+              style={{
                 background: activeTab === 'dashboard' ? 'var(--glass-bg)' : 'transparent',
                 color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
                 border: 'none',
@@ -440,9 +441,9 @@ function App() {
             >
               Dashboard
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('calendar')}
-              style={{ 
+              style={{
                 background: activeTab === 'calendar' ? 'var(--glass-bg)' : 'transparent',
                 color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
                 border: 'none',
@@ -462,10 +463,10 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1 }}>
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)} 
-            className="btn btn-secondary" 
-            style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} 
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="btn btn-secondary"
+            style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }}
             title="Toggle theme"
           >
             {isDarkMode ? <Sun size={18} color="var(--accent-orange)" /> : <Moon size={18} color="var(--text-muted)" />}
@@ -482,137 +483,137 @@ function App() {
 
       <div className="app-container" style={{ flex: 1 }}>
 
-      {activeTab === 'dashboard' ? (
-        <>
-          <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
-          <div className="stats-container">
-            <div className="glass glass-panel stat-card">
-              <span className="stat-label">Total Applied</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Briefcase size={28} color="var(--accent-cyan)" />
-                <span className="stat-value">{stats.total}</span>
+        {activeTab === 'dashboard' ? (
+          <>
+            <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
+            <div className="stats-container">
+              <div className="glass glass-panel stat-card">
+                <span className="stat-label">Total Applied</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Briefcase size={28} color="var(--accent-cyan)" />
+                  <span className="stat-value">{stats.total}</span>
+                </div>
+              </div>
+              <div className="glass glass-panel stat-card">
+                <span className="stat-label">Interviews</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <BarChart3 size={28} color="var(--accent-purple)" />
+                  <span className="stat-value">{stats.interviews}</span>
+                </div>
+              </div>
+              <div className="glass glass-panel stat-card">
+                <span className="stat-label">Offers</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <TrendingUp size={28} color="var(--accent-green)" />
+                  <span className="stat-value">{stats.offers}</span>
+                </div>
               </div>
             </div>
-            <div className="glass glass-panel stat-card">
-              <span className="stat-label">Interviews</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <BarChart3 size={28} color="var(--accent-purple)" />
-                <span className="stat-value">{stats.interviews}</span>
-              </div>
-            </div>
-            <div className="glass glass-panel stat-card">
-              <span className="stat-label">Offers</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <TrendingUp size={28} color="var(--accent-green)" />
-                <span className="stat-value">{stats.offers}</span>
-              </div>
-            </div>
-          </div>
 
+            <main>
+              <div className="split-view">
+                {/* College Column */}
+                <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-cyan)' }}>College Tracking</h2>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowCollegeFilters(!showCollegeFilters)}>
+                        <Filter size={16} /> Filters
+                      </button>
+                      <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('college')}>
+                        <PlusCircle size={16} /> New
+                      </button>
+                    </div>
+                  </div>
+
+                  {showCollegeFilters && (
+                    <FilterPanel filters={collegeFilters} setFilters={setCollegeFilters} availableRoles={collegeRoles} />
+                  )}
+
+                  <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
+                </div>
+
+                {/* Self Column */}
+                <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-purple)' }}>Self Tracking</h2>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowSelfFilters(!showSelfFilters)}>
+                        <Filter size={16} /> Filters
+                      </button>
+                      <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('self')}>
+                        <PlusCircle size={16} /> New
+                      </button>
+                    </div>
+                  </div>
+
+                  {showSelfFilters && (
+                    <FilterPanel filters={selfFilters} setFilters={setSelfFilters} availableRoles={selfRoles} />
+                  )}
+
+                  <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
+                </div>
+              </div>
+            </main>
+          </>
+        ) : (
           <main>
-            <div className="split-view">
-              {/* College Column */}
-              <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-cyan)' }}>College Tracking</h2>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowCollegeFilters(!showCollegeFilters)}>
-                      <Filter size={16} /> Filters
-                    </button>
-                    <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('college')}>
-                      <PlusCircle size={16} /> New
-                    </button>
-                  </div>
-                </div>
-                
-                {showCollegeFilters && (
-                  <FilterPanel filters={collegeFilters} setFilters={setCollegeFilters} availableRoles={collegeRoles} />
-                )}
-                
-                <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
-              </div>
-              
-              {/* Self Column */}
-              <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-purple)' }}>Self Tracking</h2>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowSelfFilters(!showSelfFilters)}>
-                      <Filter size={16} /> Filters
-                    </button>
-                    <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('self')}>
-                      <PlusCircle size={16} /> New
-                    </button>
-                  </div>
-                </div>
-
-                {showSelfFilters && (
-                  <FilterPanel filters={selfFilters} setFilters={setSelfFilters} availableRoles={selfRoles} />
-                )}
-
-                <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
-              </div>
-            </div>
+            <CalendarView
+              applications={sortedApplications}
+              tasks={tasks}
+              onAppClick={setSelectedApp}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onToggleTask={handleToggleTask}
+            />
           </main>
-        </>
-      ) : (
-        <main>
-          <CalendarView 
-            applications={sortedApplications} 
-            tasks={tasks}
-            onAppClick={setSelectedApp} 
-            onAddTask={handleAddTask}
-            onEditTask={handleEditTask}
-            onDeleteTask={handleDeleteTask}
-            onToggleTask={handleToggleTask}
+        )}
+
+        {isGoalFormOpen && (
+          <GoalForm
+            initialGoal={goal}
+            onClose={() => setIsGoalFormOpen(false)}
+            onSubmit={handleGoalSave}
           />
-        </main>
-      )}
+        )}
 
-      {isGoalFormOpen && (
-        <GoalForm 
-          initialGoal={goal} 
-          onClose={() => setIsGoalFormOpen(false)} 
-          onSubmit={handleGoalSave} 
-        />
-      )}
+        {formType && (
+          <ApplicationForm
+            onClose={() => setFormType(false)}
+            onSubmit={handleAddApplication}
+            initialType={formType}
+          />
+        )}
 
-      {formType && (
-        <ApplicationForm 
-          onClose={() => setFormType(false)} 
-          onSubmit={handleAddApplication} 
-          initialType={formType}
-        />
-      )}
+        {selectedApp && (
+          <ApplicationDetails
+            app={selectedApp}
+            onClose={() => setSelectedApp(null)}
+            onUpdateStatus={handleUpdateStatus}
+          />
+        )}
 
-      {selectedApp && (
-        <ApplicationDetails 
-          app={selectedApp} 
-          onClose={() => setSelectedApp(null)}
-          onUpdateStatus={handleUpdateStatus}
-        />
-      )}
-
-      {recentlyDeleted && (
-        <div style={{
-          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-          background: '#ffffff', color: '#0f172a', padding: '12px 24px',
-          borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 9999,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: '2px solid var(--accent-cyan)'
-        }}>
-          <span>Deleted application for <strong>{recentlyDeleted.company}</strong></span>
-          <button 
-            onClick={handleUndoDelete}
-            style={{ 
-              background: 'var(--accent-cyan)', border: 'none', color: '#ffffff', 
-              fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 14px', borderRadius: '999px'
-            }}
-          >
-            <RotateCcw size={16} /> Undo
-          </button>
-        </div>
-      )}
+        {recentlyDeleted && (
+          <div style={{
+            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+            background: '#ffffff', color: '#0f172a', padding: '12px 24px',
+            borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 9999,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: '2px solid var(--accent-cyan)'
+          }}>
+            <span>Deleted application for <strong>{recentlyDeleted.company}</strong></span>
+            <button
+              onClick={handleUndoDelete}
+              style={{
+                background: 'var(--accent-cyan)', border: 'none', color: '#ffffff',
+                fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px', borderRadius: '999px'
+              }}
+            >
+              <RotateCcw size={16} /> Undo
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

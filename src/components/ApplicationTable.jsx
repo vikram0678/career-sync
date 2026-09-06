@@ -1,4 +1,4 @@
-import { Globe, Calendar, FileText, Trash2 } from 'lucide-react';
+import { Globe, Calendar, Trash2 } from 'lucide-react';
 
 function ApplicationTable({ applications, onAppClick, onDelete }) {
   if (!applications || applications.length === 0) {
@@ -31,10 +31,10 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 <div className="job-company-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Globe size={14} color="var(--text-muted)" />
                   {app.careerPageUrl ? (
-                    <a 
-                      href={app.careerPageUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
+                    <a
+                      href={app.careerPageUrl}
+                      target="_blank"
+                      rel="noreferrer"
                       style={{ color: 'inherit', textDecoration: 'none' }}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -56,12 +56,12 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 </span>
               </td>
               <td>
-                <button 
-                  className="btn btn-secondary" 
+                <button
+                  className="btn btn-secondary"
                   style={{ padding: '6px', minWidth: 'auto', background: 'transparent', border: 'none', boxShadow: 'none' }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if(onDelete) onDelete(app);
+                    if (onDelete) onDelete(app);
                   }}
                   title="Delete Application"
                 >

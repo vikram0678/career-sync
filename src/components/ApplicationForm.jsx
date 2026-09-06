@@ -14,7 +14,7 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
     resumeLink: '',
     screenshots: []
   });
-  
+
   const [resumeFileObj, setResumeFileObj] = useState(null);
   const [screenshotFileObjs, setScreenshotFileObjs] = useState([]);
 
@@ -44,29 +44,29 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
         <button className="modal-close" onClick={onClose}>
           <X size={24} />
         </button>
-        
+
         <h2 style={{ marginBottom: '24px', fontSize: '1.8rem' }}>Track New Application</h2>
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">
               <label htmlFor="role">Role</label>
-              <input 
-                type="text" 
-                id="role" 
-                name="role" 
-                className="form-control" 
+              <input
+                type="text"
+                id="role"
+                name="role"
+                className="form-control"
                 value={formData.role}
                 onChange={handleChange}
                 placeholder="e.g. Frontend Developer"
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="applicationType">Application Type</label>
-              <select 
-                id="applicationType" 
-                name="applicationType" 
+              <select
+                id="applicationType"
+                name="applicationType"
                 className="form-control"
                 value={formData.applicationType}
                 onChange={handleChange}
@@ -76,28 +76,28 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
               </select>
             </div>
           </div>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">
               <label htmlFor="website">Company Name</label>
-              <input 
-                type="text" 
-                id="website" 
-                name="website" 
-                className="form-control" 
+              <input
+                type="text"
+                id="website"
+                name="website"
+                className="form-control"
                 value={formData.website}
                 onChange={handleChange}
                 placeholder="e.g. Google"
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="careerPageUrl">Careers Page URL</label>
-              <input 
-                type="url" 
-                id="careerPageUrl" 
-                name="careerPageUrl" 
-                className="form-control" 
+              <input
+                type="url"
+                id="careerPageUrl"
+                name="careerPageUrl"
+                className="form-control"
                 value={formData.careerPageUrl || ''}
                 onChange={handleChange}
                 placeholder="https://careers..."
@@ -108,20 +108,20 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
             <div className="form-group">
               <label htmlFor="appliedDate">Applied Date</label>
-              <input 
-                type="date" 
-                id="appliedDate" 
-                name="appliedDate" 
-                className="form-control" 
+              <input
+                type="date"
+                id="appliedDate"
+                name="appliedDate"
+                className="form-control"
                 value={formData.appliedDate}
                 onChange={handleChange}
               />
             </div>
             <div className="form-group">
               <label htmlFor="status">Status</label>
-              <select 
-                id="status" 
-                name="status" 
+              <select
+                id="status"
+                name="status"
                 className="form-control"
                 value={formData.status}
                 onChange={handleChange}
@@ -134,11 +134,11 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
             </div>
             <div className="form-group">
               <label htmlFor="salary">Salary / Stipend</label>
-              <input 
-                type="text" 
-                id="salary" 
-                name="salary" 
-                className="form-control" 
+              <input
+                type="text"
+                id="salary"
+                name="salary"
+                className="form-control"
                 value={formData.salary}
                 onChange={handleChange}
                 placeholder="e.g. $100k or 20k/mo"
@@ -148,12 +148,15 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">
-              <label htmlFor="resumeFile">Upload Resume (Optional)</label>
-              <input 
-                type="file" 
-                id="resumeFile" 
-                name="resumeFile" 
-                className="form-control" 
+              <label htmlFor="resumeFile" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <UploadCloud size={18} color="var(--accent-cyan)" />
+                Upload Resume (Optional)
+              </label>
+              <input
+                type="file"
+                id="resumeFile"
+                name="resumeFile"
+                className="form-control"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => {
                   if (e.target.files[0]) {
@@ -171,11 +174,11 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
             <div className="form-group">
               <label htmlFor="resumeLink">Or Resume Link (Optional)</label>
-              <input 
-                type="url" 
-                id="resumeLink" 
-                name="resumeLink" 
-                className="form-control" 
+              <input
+                type="url"
+                id="resumeLink"
+                name="resumeLink"
+                className="form-control"
                 value={formData.resumeLink || ''}
                 onChange={handleChange}
                 placeholder="https://drive.google.com/..."
@@ -185,10 +188,10 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
           <div className="form-group">
             <label htmlFor="jobDescription">Job Description (JD)</label>
-            <textarea 
-              id="jobDescription" 
-              name="jobDescription" 
-              className="form-control" 
+            <textarea
+              id="jobDescription"
+              name="jobDescription"
+              className="form-control"
               rows="4"
               value={formData.jobDescription}
               onChange={handleChange}
@@ -198,11 +201,11 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
           <div className="form-group">
             <label htmlFor="screenshotFiles">Screenshots (Select multiple)</label>
-            <input 
-              type="file" 
-              id="screenshotFiles" 
-              name="screenshotFiles" 
-              className="form-control" 
+            <input
+              type="file"
+              id="screenshotFiles"
+              name="screenshotFiles"
+              className="form-control"
               accept="image/*"
               multiple
               onChange={(e) => {
