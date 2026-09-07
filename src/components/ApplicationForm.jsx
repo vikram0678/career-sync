@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, UploadCloud } from 'lucide-react';
+import { X, UploadCloud, FileText, Sparkles } from 'lucide-react';
 
-function ApplicationForm({ onClose, onSubmit, initialType }) {
+function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
   const [formData, setFormData] = useState({
     role: '',
     website: '',
@@ -20,6 +20,17 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleUseMasterResume = () => {
+    if (profile?.masterResumeUrl) {
+      setResumeFileObj(null);
+      setFormData({
+        ...formData,
+        resumeUsed: profile.masterResumeName || 'Master_Resume.pdf',
+        resumeUrl: profile.masterResumeUrl
+      });
+    }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,10 +159,23 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">
-              <label htmlFor="resumeFile" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <UploadCloud size={18} color="var(--accent-cyan)" />
-                Upload Resume (Optional)
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label htmlFor="resumeFile" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                  <UploadCloud size={18} color="var(--accent-cyan)" />
+                  Upload Resume
+                </label>
+                {profile?.masterResumeUrl && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    style={{ padding: '2px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(56, 189, 248, 0.3)' }}
+                    onClick={handleUseMasterResume}
+                    title="Quickly attach your saved Master Resume"
+                  >
+                    <Sparkles size={12} /> Use Master Resume
+                  </button>
+                )}
+              </div>
               <input
                 type="file"
                 id="resumeFile"
@@ -169,7 +193,11 @@ function ApplicationForm({ onClose, onSubmit, initialType }) {
                   }
                 }}
               />
-              {formData.resumeUsed && <small style={{ color: 'var(--text-muted)' }}>Selected: {formData.resumeUsed}</small>}
+              {formData.resumeUsed && (
+                <div style={{ marginTop: '6px', fontSize: '0.85rem', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FileText size={14} /> Selected: <strong>{formData.resumeUsed}</strong>
+                </div>
+              )}
             </div>
 
             <div className="form-group">

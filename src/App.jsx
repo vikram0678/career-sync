@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw } from 'lucide-react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download } from 'lucide-react';
 import { supabase } from './supabase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
@@ -7,6 +7,8 @@ import ApplicationTable from './components/ApplicationTable';
 import CalendarView from './components/CalendarView';
 import GoalCountdown from './components/GoalCountdown';
 import GoalForm from './components/GoalForm';
+import AnalyticsView from './components/AnalyticsView';
+import ProfileModal from './components/ProfileModal';
 
 function FilterPanel({ filters, setFilters, availableRoles }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -102,6 +104,21 @@ function App() {
   const [goal, setGoal] = useState(null);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
 
+  // Profile states
+  const [profile, setProfile] = useState({
+    headline: 'Software Engineer & Builder',
+    githubUrl: '',
+    linkedinUrl: '',
+    portfolioUrl: '',
+    targetSalary: '',
+    skills: ['React', 'JavaScript', 'Node.js', 'PostgreSQL'],
+    masterResumeUrl: '',
+    masterResumeName: ''
+  });
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
   const deleteTimerRef = useRef(null);
 
@@ -118,6 +135,17 @@ function App() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  // Click outside to close profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
   const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
@@ -144,14 +172,16 @@ function App() {
       if (data && !error) setTasks(data);
     };
 
-    const fetchGoal = async (userId) => {
+    const fetchPreferences = async (userId) => {
       const { data } = await supabase
         .from('user_preferences')
-        .select('goal')
+        .select('goal, profile')
         .eq('userId', userId)
         .maybeSingle();
-      if (data && data.goal) {
-        setGoal(data.goal);
+      if (data) {
+        if (data.goal) setGoal(data.goal);
+        else setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
+        if (data.profile) setProfile(data.profile);
       } else {
         setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
       }
@@ -169,7 +199,7 @@ function App() {
       if (currentUser) {
         fetchApplications(currentUser.id);
         fetchTasks(currentUser.id);
-        fetchGoal(currentUser.id);
+        fetchPreferences(currentUser.id);
 
         applicationsChannel = supabase.channel('public:applications')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `userId=eq.${currentUser.id}` }, () => {
@@ -312,12 +342,60 @@ function App() {
     setGoal(newGoal);
     if (user) {
       try {
-        await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal }], { onConflict: 'userId' });
+        await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal, profile }], { onConflict: 'userId' });
       } catch (error) {
         console.error("Error saving goal: ", error);
       }
     }
     setIsGoalFormOpen(false);
+  };
+
+  const handleSaveProfile = async (updatedProfile) => {
+    setProfile(updatedProfile);
+    if (user) {
+      try {
+        await supabase.from('user_preferences').upsert([{ userId: user.id, profile: updatedProfile, goal }], { onConflict: 'userId' });
+      } catch (error) {
+        console.error("Error saving profile: ", error);
+      }
+    }
+  };
+
+  const handleUploadMasterResume = async (file) => {
+    if (!user) throw new Error("Not logged in");
+    const fileExt = file.name.split('.').pop();
+    const fileName = `master_${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
+    const { error } = await supabase.storage.from('resumes').upload(filePath, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleExportCSV = () => {
+    if (!applications || applications.length === 0) {
+      alert("No applications to export yet!");
+      return;
+    }
+    const headers = ["Role", "Company", "Careers URL", "Applied Date", "Status", "Salary", "Type", "Resume Used"];
+    const rows = applications.map(app => [
+      `"${(app.role || '').replace(/"/g, '""')}"`,
+      `"${(app.website || '').replace(/"/g, '""')}"`,
+      `"${(app.careerPageUrl || '').replace(/"/g, '""')}"`,
+      `"${app.appliedDate || ''}"`,
+      `"${app.status || ''}"`,
+      `"${(app.salary || '').replace(/"/g, '""')}"`,
+      `"${app.applicationType || 'self'}"`,
+      `"${(app.resumeUsed || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `CareerSync_Applications_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleAddTask = async (newTask) => {
@@ -420,8 +498,9 @@ function App() {
             background: 'var(--glass-border)',
             padding: '4px',
             borderRadius: '12px',
-            width: '280px',
-            justifyContent: 'space-between'
+            width: '380px',
+            justifyContent: 'space-between',
+            gap: '4px'
           }}>
             <button
               onClick={() => setActiveTab('dashboard')}
@@ -432,7 +511,7 @@ function App() {
                 padding: '8px 0',
                 borderRadius: '8px',
                 fontWeight: '700',
-                fontSize: '0.95rem',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 flex: 1,
@@ -440,6 +519,24 @@ function App() {
               }}
             >
               Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              style={{
+                background: activeTab === 'analytics' ? 'var(--glass-bg)' : 'transparent',
+                color: activeTab === 'analytics' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                border: 'none',
+                padding: '8px 0',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1,
+                boxShadow: activeTab === 'analytics' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Analytics
             </button>
             <button
               onClick={() => setActiveTab('calendar')}
@@ -450,7 +547,7 @@ function App() {
                 padding: '8px 0',
                 borderRadius: '8px',
                 fontWeight: '700',
-                fontSize: '0.95rem',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 flex: 1,
@@ -462,7 +559,8 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: 1, position: 'relative' }} ref={profileMenuRef}>
+          {/* Theme Quick Toggle */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="btn btn-secondary"
@@ -471,13 +569,92 @@ function App() {
           >
             {isDarkMode ? <Sun size={18} color="var(--accent-orange)" /> : <Moon size={18} color="var(--text-muted)" />}
           </button>
-          <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.95rem' }}>
-            {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
-          </span>
-          <img src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'} alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-          <button onClick={() => supabase.auth.signOut()} className="btn btn-secondary" style={{ padding: '8px', minWidth: 'auto', background: 'var(--glass-bg)', border: 'none', boxShadow: 'none' }} title="Log out">
-            <LogOut size={18} color="var(--text-muted)" />
-          </button>
+
+          {/* Interactive User Profile Trigger */}
+          <div
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '4px 12px 4px 4px',
+              borderRadius: '999px',
+              background: isProfileMenuOpen ? 'var(--glass-highlight)' : 'var(--glass-bg)',
+              cursor: 'pointer',
+              border: '1px solid var(--glass-border)',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+          >
+            <img
+              src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'}
+              alt="Profile"
+              style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+            <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '0.9rem' }}>
+              {user.user_metadata?.full_name?.split(' ')[0] || 'Profile'}
+            </span>
+            <ChevronDown size={14} color="var(--text-muted)" style={{ transform: isProfileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+          </div>
+
+          {/* Profile Dropdown Menu */}
+          {isProfileMenuOpen && (
+            <div className="glass glass-panel profile-dropdown-menu">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
+                <img
+                  src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'}
+                  alt="Profile"
+                  style={{ width: '42px', height: '42px', borderRadius: '50%', border: '2px solid var(--accent-cyan)' }}
+                />
+                <div style={{ overflow: 'hidden', flex: 1 }}>
+                  <div style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '0.95rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                    {user.user_metadata?.full_name || 'User'}
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+
+              {profile.headline && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', padding: '8px 0 4px 0', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  💼 {profile.headline}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setIsProfileOpen(true);
+                    setIsProfileMenuOpen(false);
+                  }}
+                >
+                  <User size={16} color="var(--accent-cyan)" /> My Career Profile & Links
+                </button>
+
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    handleExportCSV();
+                    setIsProfileMenuOpen(false);
+                  }}
+                >
+                  <Download size={16} color="var(--accent-green)" /> Export Applications (.CSV)
+                </button>
+
+                <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+
+                <button
+                  className="dropdown-item"
+                  style={{ color: '#ef4444' }}
+                  onClick={() => supabase.auth.signOut()}
+                >
+                  <LogOut size={16} color="#ef4444" /> Sign Out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -556,6 +733,10 @@ function App() {
               </div>
             </main>
           </>
+        ) : activeTab === 'analytics' ? (
+          <main>
+            <AnalyticsView applications={sortedApplications} />
+          </main>
         ) : (
           <main>
             <CalendarView
@@ -578,11 +759,23 @@ function App() {
           />
         )}
 
+        {isProfileOpen && (
+          <ProfileModal
+            user={user}
+            profile={profile}
+            onSaveProfile={handleSaveProfile}
+            onUploadResume={handleUploadMasterResume}
+            onExportCSV={handleExportCSV}
+            onClose={() => setIsProfileOpen(false)}
+          />
+        )}
+
         {formType && (
           <ApplicationForm
             onClose={() => setFormType(false)}
             onSubmit={handleAddApplication}
             initialType={formType}
+            profile={profile}
           />
         )}
 
