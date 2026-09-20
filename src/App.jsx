@@ -76,12 +76,92 @@ function LoginScreen() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-gradient)', backgroundSize: '200% 200%', animation: 'auroraFlow 20s ease infinite' }}>
-      <div className="glass glass-panel" style={{ textAlign: 'center', padding: '48px', maxWidth: '400px', width: '90%' }}>
-        <h1 style={{ marginBottom: '16px' }}>CareerSync</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Organize your job hunt and track your momentum.</p>
-        <button className="btn btn-primary" onClick={handleLogin} style={{ width: '100%', fontSize: '1.1rem', padding: '16px' }}>
-          Sign in with Google
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      padding: '24px'
+    }}>
+      <div className="glass glass-panel" style={{
+        textAlign: 'center',
+        padding: '48px 36px',
+        maxWidth: '460px',
+        width: '100%',
+        borderRadius: '28px',
+        border: '1px solid rgba(56, 189, 248, 0.3)',
+        boxShadow: 'var(--shadow-lg)'
+      }}>
+        {/* Brand Icon Halo */}
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '18px',
+          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 20px auto',
+          boxShadow: '0 0 24px rgba(56, 189, 248, 0.25)'
+        }}>
+          <Briefcase size={30} color="var(--accent-cyan)" />
+        </div>
+
+        <h1 style={{ marginBottom: '8px', fontSize: '2.4rem' }}>CareerSync</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.95rem', lineHeight: '1.5' }}>
+          Your intelligent job tracker, interview preparation studio, and AI career copilot.
+        </p>
+
+        {/* Feature Highlights */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          textAlign: 'left',
+          background: 'rgba(0, 0, 0, 0.15)',
+          padding: '14px 18px',
+          borderRadius: '14px',
+          marginBottom: '28px',
+          border: '1px solid var(--glass-border)',
+          fontSize: '0.84rem',
+          color: 'var(--text-muted)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>✦</span>
+            <span><strong>AI Magic Paste:</strong> Auto-parse job postings in 1 second</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-purple)', fontWeight: 'bold' }}>✦</span>
+            <span><strong>Interactive Kanban:</strong> Drag & drop pipeline tracking</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-green)', fontWeight: 'bold' }}>✦</span>
+            <span><strong>Interview Simulator:</strong> Predicted tech & STAR questions</span>
+          </div>
+        </div>
+
+        <button
+          className="btn btn-primary"
+          onClick={handleLogin}
+          style={{
+            width: '100%',
+            fontSize: '0.98rem',
+            padding: '14px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            borderRadius: '14px'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.03h3.89c2.28-2.1 3.65-5.2 3.65-9.12z" />
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.89-3.03c-1.08.72-2.45 1.16-4.04 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.13C3.26 21.43 7.34 24 12 24z" />
+            <path fill="#FBBC05" d="M5.28 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.57H1.24C.45 8.14 0 9.97 0 12s.45 3.86 1.24 5.43l4.04-3.14z" />
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.57 1.24 6.57l4.04 3.14c.95-2.83 3.6-4.96 6.72-4.96z" />
+          </svg>
+          Continue with Google
         </button>
       </div>
     </div>
@@ -576,34 +656,50 @@ function App() {
         height: '72px',
         boxShadow: '0 4px 30px rgba(0, 0, 0, 0.03)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: '1.8rem', letterSpacing: '-0.5px' }}>CareerSync</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+          <h1 style={{ margin: 0, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>CareerSync</h1>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.72rem',
+            fontWeight: '700',
+            padding: '3px 9px',
+            borderRadius: '999px',
+            background: 'rgba(56, 189, 248, 0.1)',
+            color: 'var(--accent-cyan)',
+            border: '1px solid rgba(56, 189, 248, 0.25)'
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-cyan)' }} />
+            Live Sync
+          </span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', flex: 1 }}>
           <div style={{
             display: 'flex',
-            background: 'var(--glass-border)',
+            background: 'var(--glass-card)',
             padding: '4px',
-            borderRadius: '12px',
+            borderRadius: '14px',
             width: '420px',
             justifyContent: 'space-between',
-            gap: '4px'
+            gap: '4px',
+            border: '1px solid var(--glass-border)'
           }}>
             <button
               onClick={() => setActiveTab('dashboard')}
               style={{
                 background: activeTab === 'dashboard' ? 'var(--glass-bg)' : 'transparent',
-                color: activeTab === 'dashboard' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                color: activeTab === 'dashboard' ? 'var(--accent-cyan)' : 'var(--text-muted)',
                 border: 'none',
                 padding: '8px 0',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 fontWeight: '700',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 flex: 1,
-                boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+                boxShadow: activeTab === 'dashboard' ? 'var(--shadow-sm)' : 'none'
               }}
             >
               Dashboard
@@ -612,16 +708,16 @@ function App() {
               onClick={() => setActiveTab('calendar')}
               style={{
                 background: activeTab === 'calendar' ? 'var(--glass-bg)' : 'transparent',
-                color: activeTab === 'calendar' ? 'var(--accent-blue)' : 'var(--text-muted)',
+                color: activeTab === 'calendar' ? 'var(--accent-cyan)' : 'var(--text-muted)',
                 border: 'none',
                 padding: '8px 0',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 fontWeight: '700',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 flex: 1,
-                boxShadow: activeTab === 'calendar' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+                boxShadow: activeTab === 'calendar' ? 'var(--shadow-sm)' : 'none'
               }}
             >
               Calendar
@@ -630,19 +726,19 @@ function App() {
               onClick={() => setActiveTab('profile')}
               style={{
                 background: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--glass-bg)' : 'transparent',
-                color: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--accent-blue)' : 'var(--text-muted)',
+                color: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--accent-cyan)' : 'var(--text-muted)',
                 border: 'none',
                 padding: '8px 0',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 fontWeight: '700',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 flex: 1,
-                boxShadow: (activeTab === 'profile' || activeTab === 'analytics') ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+                boxShadow: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--shadow-sm)' : 'none'
               }}
             >
-              Profile & Analytics
+              Profile & AI
             </button>
           </div>
         </div>
@@ -766,25 +862,54 @@ function App() {
           <>
             <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
             <div className="stats-container">
-              <div className="glass glass-panel stat-card">
-                <span className="stat-label">Total Applied</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Briefcase size={28} color="var(--accent-cyan)" />
+              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-cyan)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <span className="stat-label">Total Pipeline</span>
+                  <div style={{
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <Briefcase size={22} color="var(--accent-cyan)" />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
                   <span className="stat-value">{stats.total}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>applications</span>
                 </div>
               </div>
-              <div className="glass glass-panel stat-card">
-                <span className="stat-label">Interviews</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <BarChart3 size={28} color="var(--accent-purple)" />
+
+              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-purple)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <span className="stat-label">Interview Rounds</span>
+                  <div style={{
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <BarChart3 size={22} color="var(--accent-purple)" />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
                   <span className="stat-value">{stats.interviews}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>in progress</span>
                 </div>
               </div>
-              <div className="glass glass-panel stat-card">
-                <span className="stat-label">Offers</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <TrendingUp size={28} color="var(--accent-green)" />
-                  <span className="stat-value">{stats.offers}</span>
+
+              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-green)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <span className="stat-label">Offers Landed</span>
+                  <div style={{
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <TrendingUp size={22} color="var(--accent-green)" />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                  <span className="stat-value" style={{ color: 'var(--accent-green)' }}>{stats.offers}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>secured</span>
                 </div>
               </div>
             </div>
