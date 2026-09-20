@@ -712,30 +712,30 @@ function App() {
         zIndex: 1000,
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--glass-border)',
-        padding: '0 32px',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--border-color)',
+        padding: '0 28px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: '72px',
-        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.03)'
+        height: '62px',
+        boxShadow: 'var(--shadow-sm)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>CareerSync</h1>
+          <h1 style={{ margin: 0, fontSize: '1.35rem', letterSpacing: '-0.03em', fontWeight: '800' }}>CareerSync</h1>
           <span style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.72rem',
+            gap: '5px',
+            fontSize: '0.7rem',
             fontWeight: '700',
-            padding: '3px 9px',
+            padding: '2px 8px',
             borderRadius: '999px',
             background: 'rgba(56, 189, 248, 0.1)',
             color: 'var(--accent-cyan)',
             border: '1px solid rgba(56, 189, 248, 0.25)'
           }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-cyan)' }} />
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-cyan)' }} />
             Live Sync
           </span>
         </div>
@@ -744,12 +744,12 @@ function App() {
           <div style={{
             display: 'flex',
             background: 'var(--glass-card)',
-            padding: '4px',
-            borderRadius: '14px',
-            width: '420px',
+            padding: '3px',
+            borderRadius: '11px',
+            width: '360px',
             justifyContent: 'space-between',
-            gap: '4px',
-            border: '1px solid var(--glass-border)'
+            gap: '3px',
+            border: '1px solid var(--border-color)'
           }}>
             <button
               onClick={() => setActiveTab('dashboard')}
@@ -927,52 +927,52 @@ function App() {
           <>
             <GoalCountdown goal={goal} onEditClick={() => setIsGoalFormOpen(true)} />
             <div className="stats-container">
-              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-cyan)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="stat-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="stat-label">Total Pipeline</span>
                   <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)',
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <Briefcase size={22} color="var(--accent-cyan)" />
+                    <Briefcase size={18} color="var(--accent-cyan)" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
                   <span className="stat-value">{stats.total}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>applications</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>tracked applications</span>
                 </div>
               </div>
 
-              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-purple)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="stat-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="stat-label">Interview Rounds</span>
                   <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)',
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <BarChart3 size={22} color="var(--accent-purple)" />
+                    <BarChart3 size={18} color="var(--accent-purple)" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
                   <span className="stat-value">{stats.interviews}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>in progress</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>active stages</span>
                 </div>
               </div>
 
-              <div className="glass glass-panel stat-card" style={{ borderLeft: '4px solid var(--accent-green)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="stat-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="stat-label">Offers Landed</span>
                   <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)',
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <TrendingUp size={22} color="var(--accent-green)" />
+                    <TrendingUp size={18} color="var(--accent-green)" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
                   <span className="stat-value" style={{ color: 'var(--accent-green)' }}>{stats.offers}</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>secured</span>
                 </div>
