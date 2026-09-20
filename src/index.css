@@ -967,3 +967,19 @@ select.form-control option {
   max-height: 90vh;
   overflow-y: auto;
 }
+
+.profile-page-container {
+  animation: fadeIn 0.3s ease;
+}
+
+.profile-hero-card {
+  border-radius: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

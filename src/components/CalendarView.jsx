@@ -4,7 +4,7 @@ import ApplicationTable from './ApplicationTable';
 import TaskForm from './TaskForm';
 
 function CalendarView({ applications, tasks, onAppClick, onAddTask, onEditTask, onDeleteTask, onToggleTask }) {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 1)); 
+  const [currentDate, setCurrentDate] = useState(new Date()); 
   const [selectedDay, setSelectedDay] = useState(null); // { dateString, apps, tasks }
   
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
