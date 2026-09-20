@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download } from 'lucide-react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download, Search, X } from 'lucide-react';
 import { supabase } from './supabase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
@@ -7,8 +7,7 @@ import ApplicationTable from './components/ApplicationTable';
 import CalendarView from './components/CalendarView';
 import GoalCountdown from './components/GoalCountdown';
 import GoalForm from './components/GoalForm';
-import AnalyticsView from './components/AnalyticsView';
-import ProfileModal from './components/ProfileModal';
+import ProfilePage from './components/ProfilePage';
 
 function FilterPanel({ filters, setFilters, availableRoles }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -112,9 +111,23 @@ function App() {
     masterResumeUrl: '',
     masterResumeName: ''
   });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
+  const profileHoverTimeoutRef = useRef(null);
+
+  const handleProfileMouseEnter = () => {
+    if (profileHoverTimeoutRef.current) {
+      clearTimeout(profileHoverTimeoutRef.current);
+    }
+    setIsProfileMenuOpen(true);
+  };
+
+  const handleProfileMouseLeave = () => {
+    profileHoverTimeoutRef.current = setTimeout(() => {
+      setIsProfileMenuOpen(false);
+    }, 250);
+  };
 
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
   const deleteTimerRef = useRef(null);
@@ -309,6 +322,20 @@ function App() {
     }
   };
 
+  const handleUpdateApplication = async (updatedApp) => {
+    try {
+      const { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
+      if (error) throw error;
+      setApplications(applications.map(a => a.id === updatedApp.id ? updatedApp : a));
+      if (selectedApp && selectedApp.id === updatedApp.id) {
+        setSelectedApp(updatedApp);
+      }
+    } catch (error) {
+      console.error("Error updating application: ", error);
+      throw error;
+    }
+  };
+
   const handleDelete = async (app) => {
     try {
       await supabase.from('applications').delete().eq('id', app.id);
@@ -446,6 +473,15 @@ function App() {
 
   const applyFilters = (apps, filters) => {
     return apps.filter(app => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = 
+          (app.role && app.role.toLowerCase().includes(q)) ||
+          (app.website && app.website.toLowerCase().includes(q)) ||
+          (app.salary && app.salary.toLowerCase().includes(q)) ||
+          (app.jobDescription && app.jobDescription.toLowerCase().includes(q));
+        if (!matchesSearch) return false;
+      }
       if (filters.startDate && new Date(app.appliedDate) < new Date(filters.startDate)) return false;
       if (filters.endDate && new Date(app.appliedDate) > new Date(filters.endDate)) return false;
       if (filters.role && app.role !== filters.role) return false;
@@ -495,7 +531,7 @@ function App() {
             background: 'var(--glass-border)',
             padding: '4px',
             borderRadius: '12px',
-            width: '380px',
+            width: '420px',
             justifyContent: 'space-between',
             gap: '4px'
           }}>
@@ -518,24 +554,6 @@ function App() {
               Dashboard
             </button>
             <button
-              onClick={() => setActiveTab('analytics')}
-              style={{
-                background: activeTab === 'analytics' ? 'var(--glass-bg)' : 'transparent',
-                color: activeTab === 'analytics' ? 'var(--accent-blue)' : 'var(--text-muted)',
-                border: 'none',
-                padding: '8px 0',
-                borderRadius: '8px',
-                fontWeight: '700',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flex: 1,
-                boxShadow: activeTab === 'analytics' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-              }}
-            >
-              Analytics
-            </button>
-            <button
               onClick={() => setActiveTab('calendar')}
               style={{
                 background: activeTab === 'calendar' ? 'var(--glass-bg)' : 'transparent',
@@ -553,10 +571,33 @@ function App() {
             >
               Calendar
             </button>
+            <button
+              onClick={() => setActiveTab('profile')}
+              style={{
+                background: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--glass-bg)' : 'transparent',
+                color: (activeTab === 'profile' || activeTab === 'analytics') ? 'var(--accent-blue)' : 'var(--text-muted)',
+                border: 'none',
+                padding: '8px 0',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1,
+                boxShadow: (activeTab === 'profile' || activeTab === 'analytics') ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              Profile & Analytics
+            </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: 1, position: 'relative' }} ref={profileMenuRef}>
+        <div 
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: 1, position: 'relative' }} 
+          ref={profileMenuRef}
+          onMouseEnter={handleProfileMouseEnter}
+          onMouseLeave={handleProfileMouseLeave}
+        >
           {/* Theme Quick Toggle */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -567,21 +608,25 @@ function App() {
             {isDarkMode ? <Sun size={18} color="var(--accent-orange)" /> : <Moon size={18} color="var(--text-muted)" />}
           </button>
 
-          {/* Interactive User Profile Trigger */}
+          {/* Interactive User Profile Trigger (Hover preview + Click to open Profile page) */}
           <div
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            onClick={() => {
+              setActiveTab('profile');
+              setIsProfileMenuOpen(false);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
               padding: '4px 12px 4px 4px',
               borderRadius: '999px',
-              background: isProfileMenuOpen ? 'var(--glass-highlight)' : 'var(--glass-bg)',
+              background: (activeTab === 'profile' || isProfileMenuOpen) ? 'var(--glass-highlight)' : 'var(--glass-bg)',
               cursor: 'pointer',
               border: '1px solid var(--glass-border)',
               transition: 'all 0.2s ease',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
             }}
+            title="Click to open full Career Profile & Analytics Page"
           >
             <img
               src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'}
@@ -594,9 +639,13 @@ function App() {
             <ChevronDown size={14} color="var(--text-muted)" style={{ transform: isProfileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
           </div>
 
-          {/* Profile Dropdown Menu */}
+          {/* Profile Hover Dropdown Preview Card */}
           {isProfileMenuOpen && (
-            <div className="glass glass-panel profile-dropdown-menu">
+            <div 
+              className="glass glass-panel profile-dropdown-menu"
+              onMouseEnter={handleProfileMouseEnter}
+              onMouseLeave={handleProfileMouseLeave}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
                 <img
                   src={user.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=User'}
@@ -623,11 +672,12 @@ function App() {
                 <button
                   className="dropdown-item"
                   onClick={() => {
-                    setIsProfileOpen(true);
+                    setActiveTab('profile');
                     setIsProfileMenuOpen(false);
                   }}
+                  style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}
                 >
-                  <User size={16} color="var(--accent-cyan)" /> My Career Profile & Links
+                  <User size={16} color="var(--accent-cyan)" /> Open Full Profile & Analytics Page
                 </button>
 
                 <button
@@ -685,6 +735,55 @@ function App() {
             </div>
 
             <main>
+              {/* Global Search Bar */}
+              <div style={{ margin: '16px 0 20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search applications by role, company, salary, or JD keywords..."
+                    className="form-control"
+                    style={{
+                      padding: '12px 42px 12px 46px',
+                      borderRadius: '12px',
+                      background: 'var(--glass-bg)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid var(--glass-border)',
+                      fontSize: '0.95rem',
+                      color: 'var(--text-main)',
+                      width: '100%'
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{
+                        position: 'absolute',
+                        right: '14px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Clear search"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                {searchQuery && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                    {collegeApps.length + selfApps.length} match{collegeApps.length + selfApps.length === 1 ? '' : 'es'}
+                  </div>
+                )}
+              </div>
+
               <div className="split-view">
                 {/* College Column */}
                 <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
@@ -730,11 +829,7 @@ function App() {
               </div>
             </main>
           </>
-        ) : activeTab === 'analytics' ? (
-          <main>
-            <AnalyticsView applications={sortedApplications} />
-          </main>
-        ) : (
+        ) : activeTab === 'calendar' ? (
           <main>
             <CalendarView
               applications={sortedApplications}
@@ -746,6 +841,17 @@ function App() {
               onToggleTask={handleToggleTask}
             />
           </main>
+        ) : (
+          <main>
+            <ProfilePage
+              user={user}
+              profile={profile}
+              applications={sortedApplications}
+              onSaveProfile={handleSaveProfile}
+              onUploadResume={handleUploadMasterResume}
+              onExportCSV={handleExportCSV}
+            />
+          </main>
         )}
 
         {isGoalFormOpen && (
@@ -753,17 +859,6 @@ function App() {
             initialGoal={goal}
             onClose={() => setIsGoalFormOpen(false)}
             onSubmit={handleGoalSave}
-          />
-        )}
-
-        {isProfileOpen && (
-          <ProfileModal
-            user={user}
-            profile={profile}
-            onSaveProfile={handleSaveProfile}
-            onUploadResume={handleUploadMasterResume}
-            onExportCSV={handleExportCSV}
-            onClose={() => setIsProfileOpen(false)}
           />
         )}
 
@@ -781,6 +876,9 @@ function App() {
             app={selectedApp}
             onClose={() => setSelectedApp(null)}
             onUpdateStatus={handleUpdateStatus}
+            onUpdateApplication={handleUpdateApplication}
+            profile={profile}
+            user={user}
           />
         )}
 

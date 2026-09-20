@@ -51,9 +51,27 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 </div>
               </td>
               <td>
-                <span className={`status-badge status-${app.status}`}>
-                  {app.status}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span className={`status-badge status-${app.status}`}>
+                    {app.status}
+                  </span>
+                  {app.status === 'applied' && app.appliedDate && Math.floor((new Date() - new Date(app.appliedDate)) / (1000 * 60 * 60 * 24)) >= 14 && (
+                    <span 
+                      style={{ 
+                        background: 'rgba(245, 158, 11, 0.15)', 
+                        color: '#f59e0b', 
+                        border: '1px solid rgba(245, 158, 11, 0.3)', 
+                        fontSize: '0.72rem', 
+                        padding: '2px 6px', 
+                        borderRadius: '999px',
+                        fontWeight: '600'
+                      }}
+                      title="More than 14 days since applied. Time to follow up!"
+                    >
+                      ⏱️ 14d+
+                    </span>
+                  )}
+                </div>
               </td>
               <td>
                 <button
