@@ -33,31 +33,96 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
   };
 
   return (
-    <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '120px' }}>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Start Date</label>
-        <input type="date" name="startDate" value={localFilters.startDate} onChange={handleChange} className="form-control" style={{ padding: '6px' }} />
+    <div 
+      className="glass"
+      style={{ 
+        padding: '16px 20px', 
+        borderRadius: '16px', 
+        marginBottom: '20px', 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '14px',
+        alignItems: 'flex-end',
+        background: 'var(--glass-card)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--shadow-sm)'
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '130px' }}>
+        <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          Start Date
+        </label>
+        <input 
+          type="date" 
+          name="startDate" 
+          value={localFilters.startDate} 
+          onChange={handleChange} 
+          className="form-control" 
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '120px' }}>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>End Date</label>
-        <input type="date" name="endDate" value={localFilters.endDate} onChange={handleChange} className="form-control" style={{ padding: '6px' }} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '130px' }}>
+        <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          End Date
+        </label>
+        <input 
+          type="date" 
+          name="endDate" 
+          value={localFilters.endDate} 
+          onChange={handleChange} 
+          className="form-control" 
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '100px' }}>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Role</label>
-        <select name="role" value={localFilters.role} onChange={handleChange} className="form-control" style={{ padding: '6px' }}>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '130px' }}>
+        <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          Role
+        </label>
+        <select 
+          name="role" 
+          value={localFilters.role} 
+          onChange={handleChange} 
+          className="form-control" 
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }}
+        >
           <option value="">All Roles</option>
           {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '100px' }}>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Min Salary</label>
-        <input type="text" name="salary" value={localFilters.salary} onChange={handleChange} className="form-control" placeholder="e.g. 100k" style={{ padding: '6px' }} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '120px' }}>
+        <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          Min Salary
+        </label>
+        <input 
+          type="text" 
+          name="salary" 
+          value={localFilters.salary} 
+          onChange={handleChange} 
+          className="form-control" 
+          placeholder="e.g. 100k" 
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-        <button onClick={handleApply} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Apply</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '1px' }}>
+        <button 
+          onClick={handleApply} 
+          className="btn btn-primary" 
+          style={{ padding: '7px 16px', fontSize: '0.84rem', fontWeight: '700' }}
+        >
+          Apply Filters
+        </button>
         {Object.values(localFilters).some(v => v !== '') && (
-          <button onClick={handleClear} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Clear</button>
+          <button 
+            onClick={handleClear} 
+            className="btn btn-secondary" 
+            style={{ padding: '7px 14px', fontSize: '0.84rem' }}
+          >
+            Reset
+          </button>
         )}
       </div>
     </div>

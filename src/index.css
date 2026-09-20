@@ -563,28 +563,41 @@ select.form-control option {
 }
 
 .status-applied {
-  background: rgba(148, 163, 184, 0.15);
+  background: rgba(148, 163, 184, 0.12);
   color: var(--text-muted);
   border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .status-interview {
-  background: rgba(168, 85, 247, 0.15);
+  background: rgba(168, 85, 247, 0.12);
   color: var(--accent-purple);
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
+.status-interview::before {
+  animation: statusPulse 2s infinite ease-in-out;
+}
+
 .status-offer {
-  background: rgba(34, 197, 94, 0.15);
+  background: rgba(34, 197, 94, 0.12);
   color: var(--accent-green);
   border: 1px solid rgba(34, 197, 94, 0.3);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
+}
+
+.status-offer::before {
+  animation: statusPulse 2s infinite ease-in-out;
 }
 
 .status-rejected {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
   color: var(--accent-red);
   border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.35); }
 }
 
 /* Calendar */

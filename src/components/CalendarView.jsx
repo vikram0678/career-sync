@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Briefcase, X, CheckCircle, Circle, PlusCircle, Edit2, Eye, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle, Circle, PlusCircle, Edit2, Eye, Trash2 } from 'lucide-react';
 import ApplicationTable from './ApplicationTable';
 import TaskForm from './TaskForm';
+import CompanyAvatar from './CompanyAvatar';
 
 function CalendarView({ applications, tasks, onAppClick, onAddTask, onEditTask, onDeleteTask, onToggleTask }) {
   const [currentDate, setCurrentDate] = useState(new Date()); 
@@ -150,8 +151,9 @@ function CalendarView({ applications, tasks, onAppClick, onAddTask, onEditTask, 
                 e.stopPropagation();
                 onAppClick(app);
               }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
             >
-              <Briefcase size={12} style={{ flexShrink: 0 }} />
+              <CompanyAvatar company={app.website} url={app.careerPageUrl} size={15} borderRadius={4} />
               <span className="app-company">{app.website}</span>
             </div>
           ))}

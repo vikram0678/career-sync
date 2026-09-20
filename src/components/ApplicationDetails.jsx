@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { 
   X, 
   Calendar, 
-  Globe, 
   FileText, 
   Briefcase, 
   Download, 
@@ -20,9 +19,12 @@ import {
   Bot,
   Loader2,
   Target,
-  HelpCircle
+  HelpCircle,
+  ExternalLink,
+  DollarSign
 } from 'lucide-react';
 import { generateInterviewPrep, generateResumeBullets } from '../services/aiService';
+import CompanyAvatar from './CompanyAvatar';
 
 function FileViewerModal({ fileUrl, fileType, onClose }) {
   let displayUrl = fileUrl;
@@ -69,6 +71,7 @@ function ApplicationDetails({
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLinkedIn, setCopiedLinkedIn] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
+  const [copiedJd, setCopiedJd] = useState(false);
 
   // AI Studio states
   const [aiStudioTab, setAiStudioTab] = useState('interview'); // 'interview' | 'resume' | 'outreach'
@@ -427,35 +430,62 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
           ) : (
             /* View Mode */
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                <div>
-                  <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>{app.role}</h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: 'var(--text-muted)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Globe size={18} /> 
-                      {app.careerPageUrl ? (
-                        <a href={app.careerPageUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-cyan)', textDecoration: 'none' }}>
-                          {app.website}
-                        </a>
-                      ) : (
-                        app.website
-                      )}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Calendar size={18} /> {app.appliedDate || 'No date set'}
-                    </span>
-                    {app.salary && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                         • Salary: <strong style={{ color: 'var(--text-main)' }}>{app.salary}</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', minWidth: '280px' }}>
+                  <CompanyAvatar 
+                    company={app.website} 
+                    url={app.careerPageUrl} 
+                    size={52} 
+                    borderRadius={14} 
+                  />
+                  <div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+                      {app.role}
+                    </h2>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        {app.careerPageUrl ? (
+                          <a 
+                            href={app.careerPageUrl} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            style={{ color: 'var(--accent-cyan)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}
+                          >
+                            <span>{app.website}</span>
+                            <ExternalLink size={13} />
+                          </a>
+                        ) : (
+                          <strong style={{ color: 'var(--text-main)' }}>{app.website}</strong>
+                        )}
                       </span>
-                    )}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Calendar size={14} style={{ color: 'var(--accent-cyan)' }} /> {app.appliedDate || 'No date set'}
+                      </span>
+                      {app.salary && (
+                        <span style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          color: 'var(--accent-green)',
+                          background: 'rgba(74, 222, 128, 0.1)',
+                          border: '1px solid rgba(74, 222, 128, 0.25)',
+                          padding: '1px 8px',
+                          borderRadius: '6px',
+                          fontWeight: '700',
+                          fontSize: '0.8rem'
+                        }}>
+                          <DollarSign size={12} /> {app.salary}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Status:</span>
                   <select 
                     className="form-control" 
-                    style={{ padding: '6px 12px', fontSize: '0.85rem', width: 'auto' }}
+                    style={{ padding: '6px 12px', fontSize: '0.85rem', width: 'auto', fontWeight: '700' }}
                     value={app.status}
                     onChange={(e) => onUpdateStatus(app.id, e.target.value)}
                   >
@@ -858,12 +888,40 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                   </div>
                 </div>
 
-                <div className="glass glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px' }}>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '1.1rem' }}>
-                    <Briefcase size={18} color="var(--accent-purple)" />
-                    Job Description
-                  </h3>
-                  <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-main)', lineHeight: '1.6', maxHeight: '250px', overflowY: 'auto' }}>
+                <div className="glass glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '18px', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '1.05rem' }}>
+                      <Briefcase size={18} color="var(--accent-purple)" />
+                      Job Description
+                    </h3>
+                    {app.jobDescription && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          navigator.clipboard.writeText(app.jobDescription);
+                          setCopiedJd(true);
+                          setTimeout(() => setCopiedJd(false), 2000);
+                        }}
+                        style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        {copiedJd ? <Check size={13} color="var(--accent-green)" /> : <Copy size={13} />}
+                        <span>{copiedJd ? 'Copied!' : 'Copy JD'}</span>
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ 
+                    whiteSpace: 'pre-wrap', 
+                    color: 'var(--text-main)', 
+                    lineHeight: '1.65', 
+                    maxHeight: '260px', 
+                    overflowY: 'auto',
+                    fontSize: '0.9rem',
+                    padding: '12px',
+                    background: 'rgba(0, 0, 0, 0.15)',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)'
+                  }}>
                     {app.jobDescription || "No job description provided."}
                   </div>
                 </div>

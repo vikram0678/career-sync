@@ -1,17 +1,48 @@
 import { useState } from 'react';
 import { 
-  Globe, 
   Calendar, 
   Trash2, 
   DollarSign, 
-  GripVertical
+  GripVertical,
+  ExternalLink,
+  Clock,
+  Briefcase
 } from 'lucide-react';
+import CompanyAvatar from './CompanyAvatar';
 
 const COLUMNS = [
-  { id: 'applied', label: 'Applied', color: 'var(--accent-cyan)', bg: 'rgba(0, 180, 216, 0.08)', border: 'rgba(0, 180, 216, 0.3)' },
-  { id: 'interview', label: 'Interviewing', color: 'var(--accent-purple)', bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.3)' },
-  { id: 'offer', label: 'Offer Received', color: 'var(--accent-green)', bg: 'rgba(74, 222, 128, 0.08)', border: 'rgba(74, 222, 128, 0.3)' },
-  { id: 'rejected', label: 'Archived / Rejected', color: '#f87171', bg: 'rgba(248, 113, 113, 0.08)', border: 'rgba(248, 113, 113, 0.3)' },
+  { 
+    id: 'applied', 
+    label: 'Applied', 
+    color: 'var(--accent-cyan)', 
+    bg: 'rgba(56, 189, 248, 0.05)', 
+    border: 'rgba(56, 189, 248, 0.35)',
+    glow: 'rgba(56, 189, 248, 0.2)'
+  },
+  { 
+    id: 'interview', 
+    label: 'Interviewing', 
+    color: 'var(--accent-purple)', 
+    bg: 'rgba(168, 85, 247, 0.05)', 
+    border: 'rgba(168, 85, 247, 0.35)',
+    glow: 'rgba(168, 85, 247, 0.2)'
+  },
+  { 
+    id: 'offer', 
+    label: 'Offer Received', 
+    color: 'var(--accent-green)', 
+    bg: 'rgba(74, 222, 128, 0.05)', 
+    border: 'rgba(74, 222, 128, 0.35)',
+    glow: 'rgba(74, 222, 128, 0.2)'
+  },
+  { 
+    id: 'rejected', 
+    label: 'Archived / Rejected', 
+    color: 'var(--accent-red)', 
+    bg: 'rgba(248, 113, 113, 0.05)', 
+    border: 'rgba(248, 113, 113, 0.35)',
+    glow: 'rgba(248, 113, 113, 0.2)'
+  },
 ];
 
 function KanbanBoard({ 
@@ -43,7 +74,6 @@ function KanbanBoard({
   };
 
   const handleDragLeave = (e, colId) => {
-    // Only reset if we left the column itself
     if (e.currentTarget.contains(e.relatedTarget)) return;
     if (activeDropCol === colId) {
       setActiveDropCol(null);
@@ -63,11 +93,11 @@ function KanbanBoard({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))',
-      gap: '16px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: '18px',
       alignItems: 'start',
       overflowX: 'auto',
-      paddingBottom: '20px'
+      paddingBottom: '24px'
     }}>
       {COLUMNS.map(col => {
         const colApps = applications.filter(a => (a.status || 'applied') === col.id);
@@ -82,16 +112,16 @@ function KanbanBoard({
             className="glass glass-panel"
             style={{
               padding: '16px',
-              borderRadius: '16px',
-              minHeight: '480px',
+              borderRadius: '18px',
+              minHeight: '520px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
               borderTop: `4px solid ${col.color}`,
               background: isTarget ? col.bg : 'var(--glass-bg)',
               borderColor: isTarget ? col.color : 'var(--glass-border)',
-              transition: 'all 0.2s ease',
-              boxShadow: isTarget ? `0 8px 30px ${col.border}` : 'none'
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow: isTarget ? `0 12px 32px ${col.glow}` : 'var(--shadow-sm)'
             }}
           >
             {/* Column Header */}
@@ -99,25 +129,33 @@ function KanbanBoard({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingBottom: '10px',
+              paddingBottom: '12px',
               borderBottom: '1px solid var(--border-color)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: '800', color: col.color, fontSize: '0.95rem' }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: col.color,
+                  boxShadow: `0 0 10px ${col.color}`
+                }} />
+                <span style={{ fontWeight: '800', color: 'var(--text-main)', fontSize: '0.96rem', letterSpacing: '-0.01em' }}>
                   {col.label}
                 </span>
-                <span style={{
-                  background: col.bg,
-                  color: col.color,
-                  border: `1px solid ${col.border}`,
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  padding: '2px 8px',
-                  borderRadius: '999px'
-                }}>
-                  {colApps.length}
-                </span>
               </div>
+              <span style={{
+                background: col.bg,
+                color: col.color,
+                border: `1px solid ${col.border}`,
+                fontSize: '0.75rem',
+                fontWeight: '800',
+                padding: '2px 9px',
+                borderRadius: '999px',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}>
+                {colApps.length}
+              </span>
             </div>
 
             {/* Column Cards Container */}
@@ -131,16 +169,20 @@ function KanbanBoard({
                 <div style={{
                   flex: 1,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '2px dashed var(--glass-border)',
-                  borderRadius: '12px',
-                  padding: '28px 16px',
+                  border: isTarget ? `2px dashed ${col.color}` : '2px dashed var(--glass-border)',
+                  borderRadius: '14px',
+                  padding: '32px 16px',
                   textAlign: 'center',
                   color: 'var(--text-muted)',
-                  fontSize: '0.82rem'
+                  fontSize: '0.85rem',
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
                 }}>
-                  {isTarget ? 'Release to drop here' : 'Drop cards here'}
+                  <Briefcase size={20} style={{ opacity: 0.5, color: col.color }} />
+                  <span>{isTarget ? 'Release to drop card here' : 'Drop cards here'}</span>
                 </div>
               ) : (
                 colApps.map(app => {
@@ -157,131 +199,162 @@ function KanbanBoard({
                       onClick={() => onAppClick(app)}
                       className="glass glass-panel"
                       style={{
-                        padding: '14px',
-                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        borderRadius: '14px',
                         cursor: 'grab',
-                        background: 'var(--glass-highlight)',
+                        background: 'var(--glass-card)',
                         border: '1px solid var(--glass-border)',
-                        opacity: isBeingDragged ? 0.4 : 1,
-                        transform: isBeingDragged ? 'scale(0.98)' : 'none',
-                        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
+                        opacity: isBeingDragged ? 0.35 : 1,
+                        transform: isBeingDragged ? 'scale(0.97) rotate(-1deg)' : 'none',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        boxShadow: 'var(--shadow-sm)',
                         position: 'relative'
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                        e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.35)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                        e.currentTarget.style.borderColor = 'var(--glass-border)';
+                      }}
                     >
-                      {/* Drag Handle & Track Badge */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <GripVertical size={14} color="var(--text-muted)" style={{ cursor: 'grab' }} />
-                          <span style={{
-                            fontSize: '0.7rem',
-                            fontWeight: '700',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.15)' : 'rgba(168, 85, 247, 0.15)',
-                            color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--accent-purple)'
+                      {/* Top Row: Company Avatar + Name + Track Badge + Grip */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <CompanyAvatar 
+                            company={app.website} 
+                            url={app.careerPageUrl} 
+                            size={26} 
+                            borderRadius={7} 
+                          />
+                          <span style={{ 
+                            fontSize: '0.82rem', 
+                            fontWeight: '600', 
+                            color: 'var(--text-muted)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                           }}>
-                            {app.applicationType === 'college' ? 'College' : 'Self'}
+                            {app.website}
                           </span>
-                          {isStagnant && (
-                            <span 
-                              style={{ 
-                                background: 'rgba(245, 158, 11, 0.15)', 
-                                color: '#f59e0b', 
-                                border: '1px solid rgba(245, 158, 11, 0.3)', 
-                                fontSize: '0.68rem', 
-                                padding: '1px 5px', 
-                                borderRadius: '999px',
-                                fontWeight: '700'
-                              }}
-                              title="14+ days since applied"
+                          {app.careerPageUrl && (
+                            <a
+                              href={app.careerPageUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ color: 'var(--text-sub)', display: 'inline-flex', alignItems: 'center' }}
+                              title="Open careers page"
                             >
-                              ⏱️ 14d+
-                            </span>
+                              <ExternalLink size={11} />
+                            </a>
                           )}
                         </div>
 
-                        {onDelete && (
-                          <button
-                            className="btn btn-secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(app);
-                            }}
-                            style={{
-                              padding: '2px',
-                              minWidth: 'auto',
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer'
-                            }}
-                            title="Delete Application"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '700',
+                            padding: '2px 6px',
+                            borderRadius: '999px',
+                            background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.12)' : 'rgba(168, 85, 247, 0.12)',
+                            color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--accent-purple)',
+                            border: `1px solid ${app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`
+                          }}>
+                            {app.applicationType === 'college' ? 'College' : 'Self'}
+                          </span>
+                          <GripVertical size={13} color="var(--text-sub)" style={{ cursor: 'grab', opacity: 0.6 }} />
+                        </div>
                       </div>
 
-                      {/* Role & Company */}
+                      {/* Role Title */}
                       <h4 style={{
                         fontSize: '0.98rem',
                         fontWeight: '700',
                         color: 'var(--text-main)',
-                        margin: '0 0 6px 0',
+                        margin: '0 0 8px 0',
                         lineHeight: '1.3'
                       }}>
                         {app.role}
                       </h4>
 
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: 'var(--text-muted)',
-                        fontSize: '0.82rem',
-                        marginBottom: '10px'
-                      }}>
-                        <Globe size={13} />
-                        {app.careerPageUrl ? (
-                          <a
-                            href={app.careerPageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ color: 'inherit', textDecoration: 'none' }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {app.website}
-                          </a>
-                        ) : (
-                          <span>{app.website}</span>
-                        )}
-                      </div>
+                      {/* Stagnant Follow-Up Alert Pill */}
+                      {isStagnant && (
+                        <div style={{
+                          background: 'rgba(245, 158, 11, 0.12)',
+                          color: '#f59e0b',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          fontSize: '0.72rem',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          marginBottom: '10px'
+                        }}>
+                          <Clock size={11} /> 14d+ follow up
+                        </div>
+                      )}
 
                       {/* Footer Details: Date & Salary */}
                       <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        fontSize: '0.75rem',
+                        fontSize: '0.76rem',
                         color: 'var(--text-muted)',
                         borderTop: '1px solid var(--border-color)',
-                        paddingTop: '8px'
+                        paddingTop: '8px',
+                        marginTop: isStagnant ? '0' : '4px'
                       }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Calendar size={12} /> {app.appliedDate || 'No date'}
+                          <Calendar size={12} style={{ color: 'var(--accent-cyan)' }} /> 
+                          {app.appliedDate || 'No date'}
                         </span>
-                        {app.salary && (
-                          <span style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '2px', 
-                            color: 'var(--accent-green)', 
-                            fontWeight: '600' 
-                          }}>
-                            <DollarSign size={11} /> {app.salary}
-                          </span>
-                        )}
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {app.salary && (
+                            <span style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '2px', 
+                              color: 'var(--accent-green)', 
+                              fontWeight: '700',
+                              background: 'rgba(74, 222, 128, 0.1)',
+                              padding: '1px 6px',
+                              borderRadius: '4px'
+                            }}>
+                              <DollarSign size={10} /> {app.salary}
+                            </span>
+                          )}
+
+                          {onDelete && (
+                            <button
+                              className="btn btn-secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(app);
+                              }}
+                              style={{
+                                padding: '2px',
+                                minWidth: 'auto',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-sub)',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                              title="Delete Application"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
