@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download, Search, X } from 'lucide-react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download, Search, X, LayoutGrid, Table } from 'lucide-react';
 import { supabase } from './supabase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
@@ -8,6 +8,7 @@ import CalendarView from './components/CalendarView';
 import GoalCountdown from './components/GoalCountdown';
 import GoalForm from './components/GoalForm';
 import ProfilePage from './components/ProfilePage';
+import KanbanBoard from './components/KanbanBoard';
 
 function FilterPanel({ filters, setFilters, availableRoles }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -112,6 +113,10 @@ function App() {
     masterResumeName: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('career_sync_view_mode') || 'table';
+  });
+  const searchInputRef = useRef(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const profileHoverTimeoutRef = useRef(null);
@@ -145,6 +150,43 @@ function App() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('career_sync_view_mode', viewMode);
+  }, [viewMode]);
+
+  // Global keyboard shortcuts (/ to search, n for new, esc to close)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+
+      if (e.key === 'Escape') {
+        if (formType) setFormType(false);
+        if (selectedApp) setSelectedApp(null);
+        if (isGoalFormOpen) setIsGoalFormOpen(false);
+        return;
+      }
+
+      if (isInputActive) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        if (activeTab !== 'dashboard') setActiveTab('dashboard');
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 50);
+      }
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setFormType('self');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [formType, selectedApp, isGoalFormOpen, activeTab]);
 
   // Click outside to close profile dropdown
   useEffect(() => {
@@ -493,6 +535,19 @@ function App() {
 
   const sortedApplications = [...applications].sort((a, b) => b.addedAt - a.addedAt);
 
+  const kanbanApps = sortedApplications.filter(app => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = 
+        (app.role && app.role.toLowerCase().includes(q)) ||
+        (app.website && app.website.toLowerCase().includes(q)) ||
+        (app.salary && app.salary.toLowerCase().includes(q)) ||
+        (app.jobDescription && app.jobDescription.toLowerCase().includes(q));
+      if (!matchesSearch) return false;
+    }
+    return true;
+  });
+
   const rawCollegeApps = sortedApplications.filter(a => a.applicationType === 'college');
   const collegeApps = applyFilters(rawCollegeApps, collegeFilters);
   const collegeRoles = Array.from(new Set(rawCollegeApps.map(a => a.role)));
@@ -735,15 +790,16 @@ function App() {
             </div>
 
             <main>
-              {/* Global Search Bar */}
-              <div style={{ margin: '16px 0 20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+              {/* Controls Header: Global Search Bar + View Mode Switcher */}
+              <div style={{ margin: '16px 0 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
                   <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
+                    ref={searchInputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search applications by role, company, salary, or JD keywords..."
+                    placeholder="Search applications across role, company, salary, or JD... (Press '/' to focus)"
                     className="form-control"
                     style={{
                       padding: '12px 42px 12px 46px',
@@ -777,56 +833,120 @@ function App() {
                     </button>
                   )}
                 </div>
-                {searchQuery && (
-                  <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                    {collegeApps.length + selfApps.length} match{collegeApps.length + selfApps.length === 1 ? '' : 'es'}
-                  </div>
-                )}
-              </div>
 
-              <div className="split-view">
-                {/* College Column */}
-                <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                    <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-cyan)' }}>College Tracking</h2>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowCollegeFilters(!showCollegeFilters)}>
-                        <Filter size={16} /> Filters
-                      </button>
-                      <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('college')}>
-                        <PlusCircle size={16} /> New
-                      </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {searchQuery && (
+                    <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                      {viewMode === 'kanban' ? kanbanApps.length : (collegeApps.length + selfApps.length)} match{(viewMode === 'kanban' ? kanbanApps.length : (collegeApps.length + selfApps.length)) === 1 ? '' : 'es'}
                     </div>
-                  </div>
-
-                  {showCollegeFilters && (
-                    <FilterPanel filters={collegeFilters} setFilters={setCollegeFilters} availableRoles={collegeRoles} />
                   )}
 
-                  <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
-                </div>
-
-                {/* Self Column */}
-                <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                    <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-purple)' }}>Self Tracking</h2>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowSelfFilters(!showSelfFilters)}>
-                        <Filter size={16} /> Filters
-                      </button>
-                      <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('self')}>
-                        <PlusCircle size={16} /> New
-                      </button>
-                    </div>
+                  {/* View Mode Switcher */}
+                  <div style={{
+                    display: 'flex',
+                    background: 'var(--glass-border)',
+                    padding: '3px',
+                    borderRadius: '10px',
+                    gap: '2px'
+                  }}>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      style={{
+                        padding: '7px 14px',
+                        fontSize: '0.82rem',
+                        background: viewMode === 'table' ? 'var(--glass-bg)' : 'transparent',
+                        color: viewMode === 'table' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        fontWeight: '700',
+                        borderRadius: '8px',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        boxShadow: viewMode === 'table' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Split Columns Table View"
+                    >
+                      <Table size={15} /> Table
+                    </button>
+                    <button
+                      onClick={() => setViewMode('kanban')}
+                      style={{
+                        padding: '7px 14px',
+                        fontSize: '0.82rem',
+                        background: viewMode === 'kanban' ? 'var(--glass-bg)' : 'transparent',
+                        color: viewMode === 'kanban' ? 'var(--accent-purple)' : 'var(--text-muted)',
+                        fontWeight: '700',
+                        borderRadius: '8px',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        boxShadow: viewMode === 'kanban' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Interactive Drag-and-Drop Pipeline Board"
+                    >
+                      <LayoutGrid size={15} /> Pipeline
+                    </button>
                   </div>
-
-                  {showSelfFilters && (
-                    <FilterPanel filters={selfFilters} setFilters={setSelfFilters} availableRoles={selfRoles} />
-                  )}
-
-                  <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
                 </div>
               </div>
+
+              {viewMode === 'kanban' ? (
+                <KanbanBoard
+                  applications={kanbanApps}
+                  onAppClick={setSelectedApp}
+                  onUpdateStatus={handleUpdateStatus}
+                  onDelete={handleDelete}
+                />
+              ) : (
+                <div className="split-view">
+                  {/* College Column */}
+                  <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                      <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-cyan)' }}>College Tracking</h2>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowCollegeFilters(!showCollegeFilters)}>
+                          <Filter size={16} /> Filters
+                        </button>
+                        <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('college')}>
+                          <PlusCircle size={16} /> New
+                        </button>
+                      </div>
+                    </div>
+
+                    {showCollegeFilters && (
+                      <FilterPanel filters={collegeFilters} setFilters={setCollegeFilters} availableRoles={collegeRoles} />
+                    )}
+
+                    <ApplicationTable applications={collegeApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
+                  </div>
+
+                  {/* Self Column */}
+                  <div className="split-column glass glass-panel" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                      <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0, color: 'var(--accent-purple)' }}>Self Tracking</h2>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setShowSelfFilters(!showSelfFilters)}>
+                          <Filter size={16} /> Filters
+                        </button>
+                        <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={() => setFormType('self')}>
+                          <PlusCircle size={16} /> New
+                        </button>
+                      </div>
+                    </div>
+
+                    {showSelfFilters && (
+                      <FilterPanel filters={selfFilters} setFilters={setSelfFilters} availableRoles={selfRoles} />
+                    )}
+
+                    <ApplicationTable applications={selfApps} onAppClick={setSelectedApp} onDelete={handleDelete} />
+                  </div>
+                </div>
+              )}
             </main>
           </>
         ) : activeTab === 'calendar' ? (

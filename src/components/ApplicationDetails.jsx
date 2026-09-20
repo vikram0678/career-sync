@@ -14,7 +14,9 @@ import {
   Sparkles, 
   CheckCircle2, 
   Save, 
-  Undo2 
+  Undo2,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 
 function FileViewerModal({ fileUrl, fileType, onClose }) {
@@ -60,6 +62,8 @@ function ApplicationDetails({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedLinkedIn, setCopiedLinkedIn] = useState(false);
+  const [copiedPitch, setCopiedPitch] = useState(false);
 
   // Editable form state initialized from app
   const [editForm, setEditForm] = useState({
@@ -125,6 +129,38 @@ ${candidateName}`;
     navigator.clipboard.writeText(emailTemplate);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2500);
+  };
+
+  const handleCopyLinkedInNote = () => {
+    const topSkills = (profile?.skills || []).slice(0, 3).join(', ');
+    const note = `Hi, I noticed ${app.website}'s engineering focus and that you're hiring for a ${app.role}. With hands-on experience in ${topSkills || 'modern software development'}, I'd love to connect and follow ${app.website}'s team journey!`;
+    navigator.clipboard.writeText(note);
+    setCopiedLinkedIn(true);
+    setTimeout(() => setCopiedLinkedIn(false), 2500);
+  };
+
+  const handleCopyPitchEmail = () => {
+    const candidateName = user?.user_metadata?.full_name || 'Applicant';
+    const skillsList = (profile?.skills || []).slice(0, 4).join(', ');
+    const template = `Subject: Application & Inquiry: ${app.role} - ${candidateName}
+
+Hi Hiring Team,
+
+I recently submitted my application for the ${app.role} role at ${app.website} and wanted to introduce myself directly.
+
+With a background building scalable applications using ${skillsList || 'modern software technologies'}, I was drawn to ${app.website}'s mission and engineering approach.
+
+I have attached my resume for your convenience and would welcome the opportunity to discuss how my skillset can add immediate value to your team.
+
+Thank you very much for your time and consideration.
+
+Best regards,
+${candidateName}
+${profile?.portfolioUrl || profile?.githubUrl || ''}`;
+
+    navigator.clipboard.writeText(template);
+    setCopiedPitch(true);
+    setTimeout(() => setCopiedPitch(false), 2500);
   };
 
   // Skill Matcher: compare profile.skills against app.jobDescription
@@ -465,6 +501,46 @@ ${candidateName}`;
                   </div>
                 </div>
               )}
+
+              {/* Outreach & Networking Assistant */}
+              <div className="glass glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', marginBottom: '20px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--accent-purple)' }}>
+                  <Send size={16} /> Outreach & Cold Pitch Assistant
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  <button
+                    onClick={handleCopyLinkedInNote}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    title="Copy personalized 300-char LinkedIn connection request note"
+                  >
+                    {copiedLinkedIn ? <Check size={14} color="var(--accent-green)" /> : <MessageSquare size={14} color="var(--accent-cyan)" />}
+                    {copiedLinkedIn ? 'LinkedIn Note Copied!' : 'Copy LinkedIn Connect Note (<300 chars)'}
+                  </button>
+
+                  <button
+                    onClick={handleCopyPitchEmail}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    title="Copy professional cold intro / cover pitch email"
+                  >
+                    {copiedPitch ? <Check size={14} color="var(--accent-green)" /> : <Send size={14} color="var(--accent-purple)" />}
+                    {copiedPitch ? 'Pitch Email Copied!' : 'Copy Intro / Pitch Email'}
+                  </button>
+                </div>
+              </div>
 
               <div style={{ display: 'grid', gap: '20px' }}>
                 <div className="glass glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px' }}>
