@@ -21,8 +21,11 @@ import {
   Edit3,
   X,
   UploadCloud,
-  ExternalLink
+  ExternalLink,
+  Bot,
+  EyeOff
 } from 'lucide-react';
+import { getGeminiApiKey, setGeminiApiKey, hasGeminiApiKey } from '../services/aiService';
 
 function ProfilePage({ 
   user, 
@@ -51,6 +54,16 @@ function ProfilePage({
   const [previewingResume, setPreviewingResume] = useState(false);
   const [selectedHeatmapDay, setSelectedHeatmapDay] = useState(null);
   const [selectedYearView, setSelectedYearView] = useState('Current');
+  const [geminiKey, setGeminiKey] = useState(() => getGeminiApiKey());
+  const [showKey, setShowKey] = useState(false);
+  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
+
+  const handleSaveGeminiKey = (e) => {
+    e?.preventDefault();
+    setGeminiApiKey(geminiKey);
+    setKeySaveSuccess(true);
+    setTimeout(() => setKeySaveSuccess(false), 3000);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -531,6 +544,73 @@ function ProfilePage({
                   onChange={handleChange} 
                   placeholder="https://yourportfolio.com" 
                 />
+              </div>
+            </div>
+
+            {/* Gemini AI API Key Configuration */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(0, 180, 216, 0.08) 100%)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginTop: '4px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: '700', color: 'var(--accent-purple)', fontSize: '0.9rem' }}>
+                  <Bot size={18} /> Google Gemini AI API Key
+                </label>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  Get free key at Google AI Studio <ExternalLink size={12} />
+                </a>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <input
+                    type={showKey ? 'text' : 'password'}
+                    value={geminiKey}
+                    onChange={(e) => setGeminiKey(e.target.value)}
+                    placeholder="AIzaSy... (stored locally in browser)"
+                    className="form-control"
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)'
+                    }}
+                    title={showKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveGeminiKey}
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  {keySaveSuccess ? 'Saved!' : 'Save AI Key'}
+                </button>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                {hasGeminiApiKey() ? (
+                  <span style={{ color: 'var(--accent-green)', fontWeight: '600' }}>✓ Gemini 2.0 Flash active for Magic Paste, Interview Predictor & Resume Optimizer</span>
+                ) : (
+                  <span>No key entered. Built-in heuristic fallbacks are active. Add a key to unlock real-time Gemini LLM capabilities.</span>
+                )}
               </div>
             </div>
 

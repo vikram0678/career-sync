@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, UploadCloud, FileText, Sparkles } from 'lucide-react';
+import { X, UploadCloud, FileText, Sparkles, Wand2, CheckCircle2 } from 'lucide-react';
+import { parseJobDescription } from '../services/aiService';
 
 function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
   const [formData, setFormData] = useState({
@@ -15,11 +16,40 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
     screenshots: []
   });
 
+  const [rawJobText, setRawJobText] = useState('');
+  const [isMagicParsing, setIsMagicParsing] = useState(false);
+  const [magicParseSuccess, setMagicParseSuccess] = useState(false);
+  const [showMagicPaste, setShowMagicPaste] = useState(false);
+
   const [resumeFileObj, setResumeFileObj] = useState(null);
   const [screenshotFileObjs, setScreenshotFileObjs] = useState([]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleMagicParse = async () => {
+    if (!rawJobText.trim()) return;
+    setIsMagicParsing(true);
+    setErrorMsg('');
+    try {
+      const parsed = await parseJobDescription(rawJobText);
+      setFormData(prev => ({
+        ...prev,
+        role: parsed.role || prev.role,
+        website: parsed.company || prev.website,
+        salary: parsed.salary || prev.salary,
+        jobDescription: parsed.jobDescription || prev.jobDescription,
+        applicationType: parsed.applicationType || prev.applicationType
+      }));
+      setMagicParseSuccess(true);
+      setTimeout(() => setMagicParseSuccess(false), 3500);
+    } catch (err) {
+      console.error("Magic paste error:", err);
+      setErrorMsg("Could not parse text automatically. Please fill fields below.");
+    } finally {
+      setIsMagicParsing(false);
+    }
   };
 
   const handleUseMasterResume = () => {
@@ -51,12 +81,90 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
 
   return (
     <div className="modal-overlay">
-      <div className="glass modal-content glass-panel">
+      <div className="glass modal-content glass-panel" style={{ maxWidth: '820px' }}>
         <button className="modal-close" onClick={onClose}>
           <X size={24} />
         </button>
 
-        <h2 style={{ marginBottom: '24px', fontSize: '1.8rem' }}>Track New Application</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '1.8rem' }}>Track New Application</h2>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowMagicPaste(!showMagicPaste)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.82rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: showMagicPaste ? 'rgba(168, 85, 247, 0.2)' : 'var(--glass-bg)',
+              color: 'var(--accent-purple)',
+              border: '1px solid rgba(168, 85, 247, 0.4)'
+            }}
+          >
+            <Wand2 size={15} /> {showMagicPaste ? 'Hide AI Magic Paste' : '✨ AI Magic Paste'}
+          </button>
+        </div>
+
+        {/* AI Magic Paste Accordion */}
+        {showMagicPaste && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(0, 180, 216, 0.08) 100%)',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <Sparkles size={16} color="var(--accent-purple)" />
+              <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--accent-purple)' }}>
+                Paste Raw Job Posting & Auto-Fill Form
+              </span>
+            </div>
+            <textarea
+              className="form-control"
+              rows="4"
+              value={rawJobText}
+              onChange={(e) => setRawJobText(e.target.value)}
+              placeholder="Paste raw text from LinkedIn, Indeed, or company job description here..."
+              style={{ fontSize: '0.85rem', marginBottom: '12px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Powered by Gemini 2.0 Flash (extracts title, company, salary, and requirements)
+              </span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleMagicParse}
+                disabled={isMagicParsing || !rawJobText.trim()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Wand2 size={15} /> {isMagicParsing ? 'Extracting with AI...' : '✨ Auto-Fill Fields'}
+              </button>
+            </div>
+            {magicParseSuccess && (
+              <div style={{
+                marginTop: '10px',
+                color: 'var(--accent-green)',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '600'
+              }}>
+                <CheckCircle2 size={16} /> Successfully extracted and auto-filled application fields!
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>

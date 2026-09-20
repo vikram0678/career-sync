@@ -16,8 +16,13 @@ import {
   Save, 
   Undo2,
   Send,
-  MessageSquare
+  MessageSquare,
+  Bot,
+  Loader2,
+  Target,
+  HelpCircle
 } from 'lucide-react';
+import { generateInterviewPrep, generateResumeBullets } from '../services/aiService';
 
 function FileViewerModal({ fileUrl, fileType, onClose }) {
   let displayUrl = fileUrl;
@@ -64,6 +69,15 @@ function ApplicationDetails({
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLinkedIn, setCopiedLinkedIn] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
+
+  // AI Studio states
+  const [aiStudioTab, setAiStudioTab] = useState('interview'); // 'interview' | 'resume' | 'outreach'
+  const [interviewData, setInterviewData] = useState(null);
+  const [isLoadingInterview, setIsLoadingInterview] = useState(false);
+  const [resumeBullets, setResumeBullets] = useState(null);
+  const [isLoadingBullets, setIsLoadingBullets] = useState(false);
+  const [copiedBulletIdx, setCopiedBulletIdx] = useState(null);
+  const [copiedAllPrep, setCopiedAllPrep] = useState(false);
 
   // Editable form state initialized from app
   const [editForm, setEditForm] = useState({
@@ -161,6 +175,51 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
     navigator.clipboard.writeText(template);
     setCopiedPitch(true);
     setTimeout(() => setCopiedPitch(false), 2500);
+  };
+
+  const handleFetchInterviewPrep = async () => {
+    setIsLoadingInterview(true);
+    try {
+      const data = await generateInterviewPrep(app.role, app.website, app.jobDescription, profile?.skills || []);
+      setInterviewData(data);
+    } catch (err) {
+      console.error("Failed to generate interview prep:", err);
+    } finally {
+      setIsLoadingInterview(false);
+    }
+  };
+
+  const handleFetchResumeBullets = async () => {
+    setIsLoadingBullets(true);
+    try {
+      const bullets = await generateResumeBullets(app.role, app.website, app.jobDescription, profile?.skills || []);
+      setResumeBullets(bullets);
+    } catch (err) {
+      console.error("Failed to generate resume bullets:", err);
+    } finally {
+      setIsLoadingBullets(false);
+    }
+  };
+
+  const handleCopySingleBullet = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedBulletIdx(idx);
+    setTimeout(() => setCopiedBulletIdx(null), 2000);
+  };
+
+  const handleCopyAllPrep = () => {
+    if (!interviewData) return;
+    const lines = [
+      `=== INTERVIEW PREPARATION FOR ${app.role.toUpperCase()} AT ${app.website.toUpperCase()} ===\n`,
+      `--- TECHNICAL QUESTIONS ---`,
+      ...(interviewData.technicalQuestions || []).map((t, i) => `${i + 1}. ${t.question}\nKey points: ${t.keyTopicsToHit}\n`),
+      `--- BEHAVIORAL QUESTIONS (STAR) ---`,
+      ...(interviewData.behavioralQuestions || []).map((b, i) => `${i + 1}. ${b.question}\nGuidance: ${b.starGuidance}\n`),
+      interviewData.companyTips ? `--- COMPANY TIPS ---\n${interviewData.companyTips}` : ''
+    ].join('\n');
+    navigator.clipboard.writeText(lines);
+    setCopiedAllPrep(true);
+    setTimeout(() => setCopiedAllPrep(false), 2500);
   };
 
   // Skill Matcher: compare profile.skills against app.jobDescription
@@ -502,44 +561,257 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                 </div>
               )}
 
-              {/* Outreach & Networking Assistant */}
-              <div className="glass glass-panel" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', marginBottom: '20px' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 12px 0', fontSize: '1rem', color: 'var(--accent-purple)' }}>
-                  <Send size={16} /> Outreach & Cold Pitch Assistant
-                </h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                  <button
-                    onClick={handleCopyLinkedInNote}
-                    className="btn btn-secondary"
-                    style={{
-                      padding: '8px 14px',
-                      fontSize: '0.82rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                    title="Copy personalized 300-char LinkedIn connection request note"
-                  >
-                    {copiedLinkedIn ? <Check size={14} color="var(--accent-green)" /> : <MessageSquare size={14} color="var(--accent-cyan)" />}
-                    {copiedLinkedIn ? 'LinkedIn Note Copied!' : 'Copy LinkedIn Connect Note (<300 chars)'}
-                  </button>
+              {/* AI Career Studio Component */}
+              <div className="glass glass-panel" style={{
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(0, 180, 216, 0.05) 100%)',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                padding: '18px',
+                marginBottom: '20px',
+                borderRadius: '16px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Bot size={20} color="var(--accent-purple)" />
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>AI Career Studio</h3>
+                    <span style={{ fontSize: '0.72rem', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+                      Gemini 2.0 Flash
+                    </span>
+                  </div>
 
-                  <button
-                    onClick={handleCopyPitchEmail}
-                    className="btn btn-secondary"
-                    style={{
-                      padding: '8px 14px',
-                      fontSize: '0.82rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                    title="Copy professional cold intro / cover pitch email"
-                  >
-                    {copiedPitch ? <Check size={14} color="var(--accent-green)" /> : <Send size={14} color="var(--accent-purple)" />}
-                    {copiedPitch ? 'Pitch Email Copied!' : 'Copy Intro / Pitch Email'}
-                  </button>
+                  {/* Studio Subtabs */}
+                  <div style={{ display: 'flex', background: 'var(--glass-border)', padding: '3px', borderRadius: '8px', gap: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setAiStudioTab('interview')}
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '0.78rem',
+                        background: aiStudioTab === 'interview' ? 'var(--glass-bg)' : 'transparent',
+                        color: aiStudioTab === 'interview' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        fontWeight: '700',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <HelpCircle size={13} /> Interview Prep
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAiStudioTab('resume')}
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '0.78rem',
+                        background: aiStudioTab === 'resume' ? 'var(--glass-bg)' : 'transparent',
+                        color: aiStudioTab === 'resume' ? 'var(--accent-green)' : 'var(--text-muted)',
+                        fontWeight: '700',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Target size={13} /> Resume Bullets
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAiStudioTab('outreach')}
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '0.78rem',
+                        background: aiStudioTab === 'outreach' ? 'var(--glass-bg)' : 'transparent',
+                        color: aiStudioTab === 'outreach' ? 'var(--accent-purple)' : 'var(--text-muted)',
+                        fontWeight: '700',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Send size={13} /> Outreach Notes
+                    </button>
+                  </div>
                 </div>
+
+                {/* Tab 1: Interview Prep */}
+                {aiStudioTab === 'interview' && (
+                  <div>
+                    {!interviewData ? (
+                      <div style={{ textAlign: 'center', padding: '16px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '12px' }}>
+                          Generate role-specific technical questions, architecture scenarios, and behavioral STAR talking points.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={handleFetchInterviewPrep}
+                          disabled={isLoadingInterview}
+                          style={{ padding: '8px 18px', fontSize: '0.85rem', margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          {isLoadingInterview ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                          {isLoadingInterview ? 'Predicting Questions with AI...' : '✨ Generate Predicted Interview Questions'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--accent-cyan)' }}>
+                            Predicted Technical & Behavioral Questions
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={handleCopyAllPrep}
+                            style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            {copiedAllPrep ? <Check size={13} color="var(--accent-green)" /> : <Copy size={13} />}
+                            {copiedAllPrep ? 'All Copied!' : 'Copy Full Prep Notes'}
+                          </button>
+                        </div>
+
+                        {/* Technical Questions */}
+                        <div>
+                          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '8px' }}>Technical Deep-Dive:</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {interviewData.technicalQuestions?.map((q, i) => (
+                              <div key={i} style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.82rem' }}>
+                                <div style={{ fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>
+                                  {i + 1}. {q.question}
+                                </div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                  💡 <strong>Key areas to hit:</strong> {q.keyTopicsToHit}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Behavioral Questions */}
+                        <div>
+                          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '8px' }}>Behavioral (STAR Method):</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {interviewData.behavioralQuestions?.map((q, i) => (
+                              <div key={i} style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.82rem' }}>
+                                <div style={{ fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>
+                                  {i + 1}. {q.question}
+                                </div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                  ⭐ <strong>STAR Guidance:</strong> {q.starGuidance}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {interviewData.companyTips && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--accent-purple)', background: 'rgba(168, 85, 247, 0.1)', padding: '8px 12px', borderRadius: '8px' }}>
+                            📌 <strong>Company Tip:</strong> {interviewData.companyTips}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 2: Resume Bullets Optimizer */}
+                {aiStudioTab === 'resume' && (
+                  <div>
+                    {!resumeBullets ? (
+                      <div style={{ textAlign: 'center', padding: '16px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '12px' }}>
+                          Generate 3 tailored, quantified achievement bullets following Google's XYZ formula ("Accomplished [X] as measured by [Y] by doing [Z]").
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={handleFetchResumeBullets}
+                          disabled={isLoadingBullets}
+                          style={{ padding: '8px 18px', fontSize: '0.85rem', margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          {isLoadingBullets ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                          {isLoadingBullets ? 'Optimizing Bullets with AI...' : '✨ Generate Tailored Resume Bullets'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--accent-green)' }}>
+                          Tailored Resume Achievement Bullets (XYZ Formula):
+                        </span>
+                        {resumeBullets.map((bullet, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              background: 'rgba(0,0,0,0.2)',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              gap: '12px'
+                            }}
+                          >
+                            <span style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                              • {bullet}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => handleCopySingleBullet(bullet, idx)}
+                              style={{ padding: '4px 8px', fontSize: '0.75rem', flexShrink: 0 }}
+                              title="Copy bullet point"
+                            >
+                              {copiedBulletIdx === idx ? <Check size={13} color="var(--accent-green)" /> : <Copy size={13} />}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 3: Outreach & Cold Pitch Assistant */}
+                {aiStudioTab === 'outreach' && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                    <button
+                      onClick={handleCopyLinkedInNote}
+                      className="btn btn-secondary"
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: '0.82rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      title="Copy personalized 300-char LinkedIn connection request note"
+                    >
+                      {copiedLinkedIn ? <Check size={14} color="var(--accent-green)" /> : <MessageSquare size={14} color="var(--accent-cyan)" />}
+                      {copiedLinkedIn ? 'LinkedIn Note Copied!' : 'Copy LinkedIn Connect Note (<300 chars)'}
+                    </button>
+
+                    <button
+                      onClick={handleCopyPitchEmail}
+                      className="btn btn-secondary"
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: '0.82rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      title="Copy professional cold intro / cover pitch email"
+                    >
+                      {copiedPitch ? <Check size={14} color="var(--accent-green)" /> : <Send size={14} color="var(--accent-purple)" />}
+                      {copiedPitch ? 'Pitch Email Copied!' : 'Copy Intro / Pitch Email'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'grid', gap: '20px' }}>
