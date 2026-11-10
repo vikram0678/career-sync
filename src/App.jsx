@@ -398,7 +398,11 @@ function App() {
         fetchTasks(currentUser.id);
         fetchPreferences(currentUser.id);
 
-        applicationsChannel = supabase.channel('public:applications')
+        if (applicationsChannel) {
+          supabase.removeChannel(applicationsChannel);
+        }
+
+        applicationsChannel = supabase.channel(`public:applications:${currentUser.id}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `userId=eq.${currentUser.id}` }, () => {
             fetchApplications(currentUser.id);
           })
@@ -406,7 +410,10 @@ function App() {
       } else {
         setApplications([]);
         setTasks([]);
-        if (applicationsChannel) supabase.removeChannel(applicationsChannel);
+        if (applicationsChannel) {
+          supabase.removeChannel(applicationsChannel);
+          applicationsChannel = null;
+        }
       }
     });
 
@@ -483,14 +490,18 @@ function App() {
     }
 
     try {
-      const { error } = await supabase.from('applications').insert([{
+      const { data, error } = await supabase.from('applications').insert([{
         ...newApp,
         resumeUrl: finalResumeUrl,
         screenshots: finalScreenshots,
         userId: user.id,
         addedAt: Date.now()
-      }]);
+      }]).select().single();
+
       if (error) throw error;
+      if (data) {
+        setApplications(prev => [data, ...prev.filter(a => a.id !== data.id)]);
+      }
       setFormType(false);
     } catch (error) {
       console.error("Error adding application: ", error);
@@ -500,9 +511,11 @@ function App() {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      await supabase.from('applications').update({ status: newStatus }).eq('id', id);
+      const { error } = await supabase.from('applications').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
       if (selectedApp && selectedApp.id === id) {
-        setSelectedApp({ ...selectedApp, status: newStatus });
+        setSelectedApp(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } catch (error) {
       console.error("Error updating status: ", error);
@@ -513,7 +526,7 @@ function App() {
     try {
       const { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
       if (error) throw error;
-      setApplications(applications.map(a => a.id === updatedApp.id ? updatedApp : a));
+      setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
       if (selectedApp && selectedApp.id === updatedApp.id) {
         setSelectedApp(updatedApp);
       }
@@ -525,7 +538,9 @@ function App() {
 
   const handleDelete = async (app) => {
     try {
-      await supabase.from('applications').delete().eq('id', app.id);
+      const { error } = await supabase.from('applications').delete().eq('id', app.id);
+      if (error) throw error;
+      setApplications(prev => prev.filter(a => a.id !== app.id));
       setRecentlyDeleted(app);
       if (selectedApp && selectedApp.id === app.id) setSelectedApp(null);
 
@@ -541,7 +556,11 @@ function App() {
   const handleUndoDelete = async () => {
     if (!recentlyDeleted) return;
     try {
-      await supabase.from('applications').insert([{ ...recentlyDeleted }]);
+      const { data, error } = await supabase.from('applications').insert([{ ...recentlyDeleted }]).select().single();
+      if (error) throw error;
+      if (data) {
+        setApplications(prev => [data, ...prev.filter(a => a.id !== data.id)]);
+      }
       setRecentlyDeleted(null);
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     } catch (err) {
