@@ -6,7 +6,9 @@ import {
   GripVertical,
   ExternalLink,
   Clock,
-  Briefcase
+  Briefcase,
+  Mail,
+  Video
 } from 'lucide-react';
 import CompanyAvatar from './CompanyAvatar';
 
@@ -297,6 +299,62 @@ function KanbanBoard({
                           marginBottom: '10px'
                         }}>
                           <Clock size={11} /> 14d+ follow up
+                        </div>
+                      )}
+
+                      {/* Direct Communication / Meeting Link Badges */}
+                      {(app.emailThreadUrl || app.meetingUrl) && (
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                          {app.emailThreadUrl && (
+                            <a
+                              href={app.emailThreadUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                color: '#ef4444',
+                                background: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Open direct Gmail thread"
+                            >
+                              <Mail size={11} /> Gmail Thread
+                            </a>
+                          )}
+                          {app.meetingUrl && (
+                            <a
+                              href={app.meetingUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                color: 'var(--accent-purple)',
+                                background: 'rgba(168, 85, 247, 0.12)',
+                                border: '1px solid rgba(168, 85, 247, 0.3)',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Join interview call or open test link"
+                            >
+                              <Video size={11} /> Join Meeting
+                            </a>
+                          )}
                         </div>
                       )}
 

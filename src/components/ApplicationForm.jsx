@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { X, UploadCloud, FileText, Sparkles, Wand2, CheckCircle2 } from 'lucide-react';
+import { X, UploadCloud, FileText, Sparkles, Wand2, CheckCircle2, Mail, Video } from 'lucide-react';
 import { parseJobDescription } from '../services/aiService';
 
 function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
   const [formData, setFormData] = useState({
     role: '',
     website: '',
+    careerPageUrl: '',
     resumeUsed: '',
     appliedDate: new Date().toISOString().split('T')[0],
     jobDescription: '',
@@ -13,6 +14,8 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
     applicationType: initialType || 'self',
     salary: '',
     resumeLink: '',
+    emailThreadUrl: '',
+    meetingUrl: '',
     screenshots: []
   });
 
@@ -318,6 +321,40 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
                 value={formData.resumeLink || ''}
                 onChange={handleChange}
                 placeholder="https://drive.google.com/..."
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div className="form-group">
+              <label htmlFor="emailThreadUrl" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Mail size={16} color="#ef4444" />
+                Gmail / Email Thread Link (Optional)
+              </label>
+              <input
+                type="url"
+                id="emailThreadUrl"
+                name="emailThreadUrl"
+                className="form-control"
+                value={formData.emailThreadUrl || ''}
+                onChange={handleChange}
+                placeholder="https://mail.google.com/mail/..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="meetingUrl" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Video size={16} color="var(--accent-purple)" />
+                Interview / Meeting Link (Optional)
+              </label>
+              <input
+                type="url"
+                id="meetingUrl"
+                name="meetingUrl"
+                className="form-control"
+                value={formData.meetingUrl || ''}
+                onChange={handleChange}
+                placeholder="https://meet.google.com/... or Zoom"
               />
             </div>
           </div>

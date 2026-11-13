@@ -21,7 +21,9 @@ import {
   Target,
   HelpCircle,
   ExternalLink,
-  DollarSign
+  DollarSign,
+  Mail,
+  Video
 } from 'lucide-react';
 import { generateInterviewPrep, generateResumeBullets } from '../services/aiService';
 import CompanyAvatar from './CompanyAvatar';
@@ -92,6 +94,8 @@ function ApplicationDetails({
     applicationType: app.applicationType || 'self',
     salary: app.salary || '',
     resumeLink: app.resumeLink || '',
+    emailThreadUrl: app.emailThreadUrl || '',
+    meetingUrl: app.meetingUrl || '',
     jobDescription: app.jobDescription || ''
   });
 
@@ -388,6 +392,37 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                 />
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mail size={15} color="#ef4444" />
+                    Gmail / Email Thread Link
+                  </label>
+                  <input
+                    type="url"
+                    name="emailThreadUrl"
+                    className="form-control"
+                    value={editForm.emailThreadUrl || ''}
+                    onChange={handleEditChange}
+                    placeholder="https://mail.google.com/mail/..."
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Video size={15} color="var(--accent-purple)" />
+                    Interview / Meeting Link
+                  </label>
+                  <input
+                    type="url"
+                    name="meetingUrl"
+                    className="form-control"
+                    value={editForm.meetingUrl || ''}
+                    onChange={handleEditChange}
+                    placeholder="https://meet.google.com/... or Zoom"
+                  />
+                </div>
+              </div>
+
               <div className="form-group" style={{ marginBottom: '24px' }}>
                 <label>Job Description (JD)</label>
                 <textarea
@@ -414,6 +449,8 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                       applicationType: app.applicationType || 'self',
                       salary: app.salary || '',
                       resumeLink: app.resumeLink || '',
+                      emailThreadUrl: app.emailThreadUrl || '',
+                      meetingUrl: app.meetingUrl || '',
                       jobDescription: app.jobDescription || ''
                     });
                     setIsEditing(false);
@@ -476,6 +513,54 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                         }}>
                           <DollarSign size={12} /> {app.salary}
                         </span>
+                      )}
+                      {app.emailThreadUrl && (
+                        <a 
+                          href={app.emailThreadUrl} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '5px', 
+                            color: '#ef4444', 
+                            background: 'rgba(239, 68, 68, 0.12)', 
+                            border: '1px solid rgba(239, 68, 68, 0.3)', 
+                            padding: '2px 9px', 
+                            borderRadius: '6px', 
+                            fontWeight: '700', 
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Open direct Gmail conversation thread"
+                        >
+                          <Mail size={12} /> Open Gmail Thread <ExternalLink size={10} />
+                        </a>
+                      )}
+                      {app.meetingUrl && (
+                        <a 
+                          href={app.meetingUrl} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '5px', 
+                            color: 'var(--accent-purple)', 
+                            background: 'rgba(168, 85, 247, 0.12)', 
+                            border: '1px solid rgba(168, 85, 247, 0.3)', 
+                            padding: '2px 9px', 
+                            borderRadius: '6px', 
+                            fontWeight: '700', 
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Join interview call or open test link"
+                        >
+                          <Video size={12} /> Join Meeting <ExternalLink size={10} />
+                        </a>
                       )}
                     </div>
                   </div>

@@ -243,19 +243,42 @@ function App() {
   const [formType, setFormType] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
 
-  const [goal, setGoal] = useState(null);
+  const [goal, setGoal] = useState(() => {
+    try {
+      const saved = localStorage.getItem('career_sync_goal');
+      return saved ? JSON.parse(saved) : { title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' };
+    } catch {
+      return { title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' };
+    }
+  });
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
 
   // Profile states
-  const [profile, setProfile] = useState({
-    headline: 'Software Engineer & Builder',
-    githubUrl: '',
-    linkedinUrl: '',
-    portfolioUrl: '',
-    targetSalary: '',
-    skills: ['React', 'JavaScript', 'Node.js', 'PostgreSQL'],
-    masterResumeUrl: '',
-    masterResumeName: ''
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('career_sync_profile');
+      return saved ? JSON.parse(saved) : {
+        headline: 'Software Engineer & Builder',
+        githubUrl: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
+        targetSalary: '',
+        skills: ['React', 'JavaScript', 'Node.js', 'PostgreSQL'],
+        masterResumeUrl: '',
+        masterResumeName: ''
+      };
+    } catch {
+      return {
+        headline: 'Software Engineer & Builder',
+        githubUrl: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
+        targetSalary: '',
+        skills: ['React', 'JavaScript', 'Node.js', 'PostgreSQL'],
+        masterResumeUrl: '',
+        masterResumeName: ''
+      };
+    }
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState(() => {
@@ -370,17 +393,25 @@ function App() {
     };
 
     const fetchPreferences = async (userId) => {
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('goal, profile')
-        .eq('userId', userId)
-        .maybeSingle();
-      if (data) {
-        if (data.goal) setGoal(data.goal);
-        else setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
-        if (data.profile) setProfile(data.profile);
-      } else {
-        setGoal({ title: 'Land a Developer Role', targetDate: '2026-12-31T00:00' });
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('userId', userId)
+          .maybeSingle();
+
+        if (data && !error) {
+          if (data.goal) {
+            setGoal(data.goal);
+            localStorage.setItem('career_sync_goal', JSON.stringify(data.goal));
+          }
+          if (data.profile) {
+            setProfile(data.profile);
+            localStorage.setItem('career_sync_profile', JSON.stringify(data.profile));
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch user preferences:", err);
       }
     };
 
@@ -570,9 +601,14 @@ function App() {
 
   const handleGoalSave = async (newGoal) => {
     setGoal(newGoal);
+    localStorage.setItem('career_sync_goal', JSON.stringify(newGoal));
     if (user) {
       try {
-        await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal, profile }], { onConflict: 'userId' });
+        const res = await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal, profile }], { onConflict: 'userId' });
+        if (res.error && res.error.code === '42703') {
+          // Fallback if profile column does not exist yet
+          await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal }], { onConflict: 'userId' });
+        }
       } catch (error) {
         console.error("Error saving goal: ", error);
       }
@@ -582,6 +618,7 @@ function App() {
 
   const handleSaveProfile = async (updatedProfile) => {
     setProfile(updatedProfile);
+    localStorage.setItem('career_sync_profile', JSON.stringify(updatedProfile));
     if (user) {
       try {
         await supabase.from('user_preferences').upsert([{ userId: user.id, profile: updatedProfile, goal }], { onConflict: 'userId' });
@@ -607,11 +644,13 @@ function App() {
       alert("No applications to export yet!");
       return;
     }
-    const headers = ["Role", "Company", "Careers URL", "Applied Date", "Status", "Salary", "Type", "Resume Used"];
+    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Type", "Resume Used"];
     const rows = applications.map(app => [
       `"${(app.role || '').replace(/"/g, '""')}"`,
       `"${(app.website || '').replace(/"/g, '""')}"`,
       `"${(app.careerPageUrl || '').replace(/"/g, '""')}"`,
+      `"${(app.emailThreadUrl || '').replace(/"/g, '""')}"`,
+      `"${(app.meetingUrl || '').replace(/"/g, '""')}"`,
       `"${app.appliedDate || ''}"`,
       `"${app.status || ''}"`,
       `"${(app.salary || '').replace(/"/g, '""')}"`,

@@ -1,4 +1,4 @@
-import { Calendar, Trash2, DollarSign, ExternalLink, Eye, Clock, Briefcase } from 'lucide-react';
+import { Calendar, Trash2, DollarSign, ExternalLink, Eye, Clock, Briefcase, Mail, Video } from 'lucide-react';
 import CompanyAvatar from './CompanyAvatar';
 
 function ApplicationTable({ applications, onAppClick, onDelete }) {
@@ -199,6 +199,50 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 {/* Actions */}
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                    {app.emailThreadUrl && (
+                      <a
+                        href={app.emailThreadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary"
+                        style={{ 
+                          padding: '6px', 
+                          minWidth: 'auto', 
+                          background: 'rgba(239, 68, 68, 0.12)', 
+                          border: '1px solid rgba(239, 68, 68, 0.3)', 
+                          borderRadius: '8px',
+                          color: '#ef4444',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open direct Gmail thread"
+                      >
+                        <Mail size={14} />
+                      </a>
+                    )}
+                    {app.meetingUrl && (
+                      <a
+                        href={app.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary"
+                        style={{ 
+                          padding: '6px', 
+                          minWidth: 'auto', 
+                          background: 'rgba(168, 85, 247, 0.12)', 
+                          border: '1px solid rgba(168, 85, 247, 0.3)', 
+                          borderRadius: '8px',
+                          color: 'var(--accent-purple)',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Join interview call / meeting"
+                      >
+                        <Video size={14} />
+                      </a>
+                    )}
                     <button
                       className="btn btn-secondary"
                       style={{ 
