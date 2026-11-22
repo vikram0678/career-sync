@@ -11,6 +11,7 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
     appliedDate: new Date().toISOString().split('T')[0],
     jobDescription: '',
     status: 'applied',
+    jobType: 'job',
     applicationType: initialType || 'self',
     salary: '',
     resumeLink: '',
@@ -42,6 +43,7 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
         role: parsed.role || prev.role,
         website: parsed.company || prev.website,
         salary: parsed.salary || prev.salary,
+        jobType: parsed.jobType || prev.jobType || 'job',
         jobDescription: parsed.jobDescription || prev.jobDescription,
         applicationType: parsed.applicationType || prev.applicationType
       }));
@@ -170,9 +172,9 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '16px' }}>
             <div className="form-group">
-              <label htmlFor="role">Role</label>
+              <label htmlFor="role">Role / Title</label>
               <input
                 type="text"
                 id="role"
@@ -181,11 +183,28 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
                 value={formData.role}
                 onChange={handleChange}
                 placeholder="e.g. Frontend Developer"
+                required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="applicationType">Application Type</label>
+              <label htmlFor="jobType">Position Type</label>
+              <select
+                id="jobType"
+                name="jobType"
+                className="form-control"
+                value={formData.jobType || 'job'}
+                onChange={handleChange}
+                style={{ fontWeight: '600' }}
+              >
+                <option value="job">💼 Full-Time Job</option>
+                <option value="internship">🎓 Internship</option>
+                <option value="contract">🤝 Contract / Part-Time</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="applicationType">Track</label>
               <select
                 id="applicationType"
                 name="applicationType"

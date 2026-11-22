@@ -91,6 +91,7 @@ function ApplicationDetails({
     careerPageUrl: app.careerPageUrl || '',
     appliedDate: app.appliedDate || '',
     status: app.status || 'applied',
+    jobType: app.jobType || 'job',
     applicationType: app.applicationType || 'self',
     salary: app.salary || '',
     resumeLink: app.resumeLink || '',
@@ -316,7 +317,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label>Careers / Portal URL</label>
                   <input
@@ -327,6 +328,20 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                     onChange={handleEditChange}
                     placeholder="https://..."
                   />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label>Position Type</label>
+                  <select
+                    name="jobType"
+                    className="form-control"
+                    value={editForm.jobType || 'job'}
+                    onChange={handleEditChange}
+                    style={{ fontWeight: '600' }}
+                  >
+                    <option value="job">💼 Full-Time Job</option>
+                    <option value="internship">🎓 Internship</option>
+                    <option value="contract">🤝 Contract / Part-Time</option>
+                  </select>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label>Application Track</label>
@@ -446,6 +461,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                       careerPageUrl: app.careerPageUrl || '',
                       appliedDate: app.appliedDate || '',
                       status: app.status || 'applied',
+                      jobType: app.jobType || 'job',
                       applicationType: app.applicationType || 'self',
                       salary: app.salary || '',
                       resumeLink: app.resumeLink || '',
@@ -476,9 +492,31 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                     borderRadius={14} 
                   />
                   <div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-                      {app.role}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', margin: '0 0 6px 0' }}>
+                      <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+                        {app.role}
+                      </h2>
+                      <span style={{
+                        fontSize: '0.74rem',
+                        fontWeight: '800',
+                        padding: '3px 9px',
+                        borderRadius: '999px',
+                        letterSpacing: '0.02em',
+                        background: (app.jobType === 'internship')
+                          ? 'rgba(245, 158, 11, 0.15)' 
+                          : (app.jobType === 'contract')
+                            ? 'rgba(168, 85, 247, 0.15)'
+                            : 'rgba(56, 189, 248, 0.15)',
+                        color: (app.jobType === 'internship')
+                          ? '#f59e0b'
+                          : (app.jobType === 'contract')
+                            ? 'var(--accent-purple)'
+                            : 'var(--accent-cyan)',
+                        border: `1px solid ${(app.jobType === 'internship') ? 'rgba(245, 158, 11, 0.35)' : (app.jobType === 'contract') ? 'rgba(168, 85, 247, 0.35)' : 'rgba(56, 189, 248, 0.35)'}`
+                      }}>
+                        {app.jobType === 'internship' ? '🎓 Internship' : app.jobType === 'contract' ? '🤝 Contract' : '💼 Full-Time'}
+                      </span>
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                         {app.careerPageUrl ? (
