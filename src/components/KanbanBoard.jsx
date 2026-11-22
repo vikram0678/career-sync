@@ -256,17 +256,36 @@ function KanbanBoard({
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
                           <span style={{
-                            fontSize: '0.68rem',
-                            fontWeight: '700',
+                            fontSize: '0.66rem',
+                            fontWeight: '800',
                             padding: '2px 6px',
                             borderRadius: '999px',
-                            background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.12)' : 'rgba(168, 85, 247, 0.12)',
-                            color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--accent-purple)',
-                            border: `1px solid ${app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`
+                            background: (app.jobType === 'internship')
+                              ? 'rgba(245, 158, 11, 0.15)'
+                              : (app.jobType === 'contract')
+                                ? 'rgba(168, 85, 247, 0.15)'
+                                : 'rgba(56, 189, 248, 0.15)',
+                            color: (app.jobType === 'internship')
+                              ? '#f59e0b'
+                              : (app.jobType === 'contract')
+                                ? 'var(--accent-purple)'
+                                : 'var(--accent-cyan)',
+                            border: `1px solid ${(app.jobType === 'internship') ? 'rgba(245, 158, 11, 0.35)' : (app.jobType === 'contract') ? 'rgba(168, 85, 247, 0.35)' : 'rgba(56, 189, 248, 0.35)'}`
                           }}>
-                            {app.applicationType === 'college' ? 'College' : 'Self'}
+                            {app.jobType === 'internship' ? '🎓 Intern' : app.jobType === 'contract' ? '🤝 Contract' : '💼 Job'}
+                          </span>
+                          <span style={{
+                            fontSize: '0.64rem',
+                            fontWeight: '700',
+                            padding: '2px 5px',
+                            borderRadius: '999px',
+                            background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                            color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                            border: `1px solid ${app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.25)' : 'var(--border-color)'}`
+                          }}>
+                            {app.applicationType === 'college' ? 'Campus' : 'Self'}
                           </span>
                           <GripVertical size={13} color="var(--text-sub)" style={{ cursor: 'grab', opacity: 0.6 }} />
                         </div>

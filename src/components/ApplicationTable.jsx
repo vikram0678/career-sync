@@ -43,6 +43,7 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
       <table className="applications-table">
         <thead>
           <tr>
+            <th style={{ width: '48px', textAlign: 'center', padding: '12px 6px', color: 'var(--text-muted)' }} title="Row Number">#</th>
             <th>Company &amp; Role</th>
             <th>Track</th>
             <th>Date Applied</th>
@@ -52,7 +53,7 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
           </tr>
         </thead>
         <tbody>
-          {applications.map(app => {
+          {applications.map((app, index) => {
             const daysSince = app.appliedDate ? Math.floor((new Date() - new Date(app.appliedDate)) / (1000 * 60 * 60 * 24)) : 0;
             const isStagnant = app.status === 'applied' && daysSince >= 14;
 
@@ -63,6 +64,20 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                 onClick={() => onAppClick(app)}
                 style={{ cursor: 'pointer' }}
               >
+                {/* Serial Number */}
+                <td style={{ width: '48px', textAlign: 'center', padding: '14px 6px' }}>
+                  <span style={{ 
+                    fontFamily: "'JetBrains Mono', monospace", 
+                    fontSize: '0.78rem', 
+                    fontWeight: '600',
+                    color: 'var(--text-muted)',
+                    opacity: 0.75,
+                    letterSpacing: '-0.02em'
+                  }}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                </td>
+
                 {/* Company & Role */}
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -121,20 +136,42 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                   </div>
                 </td>
 
-                {/* Track Badge */}
+                {/* Track & Position Type */}
                 <td>
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: '700',
-                    padding: '3px 9px',
-                    borderRadius: '999px',
-                    letterSpacing: '0.02em',
-                    background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.12)' : 'rgba(168, 85, 247, 0.12)',
-                    color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--accent-purple)',
-                    border: `1px solid ${app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.25)' : 'rgba(168, 85, 247, 0.25)'}`
-                  }}>
-                    {app.applicationType === 'college' ? 'College' : 'Self / Off-Campus'}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: '800',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      letterSpacing: '0.02em',
+                      background: (app.jobType === 'internship')
+                        ? 'rgba(245, 158, 11, 0.14)' 
+                        : (app.jobType === 'contract')
+                          ? 'rgba(168, 85, 247, 0.14)'
+                          : 'rgba(56, 189, 248, 0.14)',
+                      color: (app.jobType === 'internship')
+                        ? '#f59e0b'
+                        : (app.jobType === 'contract')
+                          ? 'var(--accent-purple)'
+                          : 'var(--accent-cyan)',
+                      border: `1px solid ${(app.jobType === 'internship') ? 'rgba(245, 158, 11, 0.35)' : (app.jobType === 'contract') ? 'rgba(168, 85, 247, 0.35)' : 'rgba(56, 189, 248, 0.35)'}`
+                    }}>
+                      {app.jobType === 'internship' ? '🎓 Internship' : app.jobType === 'contract' ? '🤝 Contract' : '💼 Full-Time'}
+                    </span>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: '700',
+                      padding: '2px 7px',
+                      borderRadius: '999px',
+                      letterSpacing: '0.02em',
+                      background: app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.08)' : 'rgba(255, 255, 255, 0.05)',
+                      color: app.applicationType === 'college' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                      border: `1px solid ${app.applicationType === 'college' ? 'rgba(0, 180, 216, 0.2)' : 'var(--border-color)'}`
+                    }}>
+                      {app.applicationType === 'college' ? 'College' : 'Self'}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Date Applied */}
