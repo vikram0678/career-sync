@@ -95,6 +95,7 @@ Return JSON with the following keys:
 - "role": string (job title, e.g. "Senior React Developer")
 - "company": string (company name, e.g. "Stripe")
 - "salary": string (compensation or stipend if mentioned, or empty string)
+- "jobType": "job" (default full-time), "internship" (if intern/co-op/trainee), or "contract"
 - "applicationType": "self" (default) or "college" (if campus/university is mentioned)
 - "cleanedDescription": string (concise summary of requirements & responsibilities, max 400 words)
 - "keySkills": string[] (up to 6 core technical skills mentioned)`;
@@ -107,6 +108,7 @@ Return JSON with the following keys:
         role: parsed.role || '',
         company: parsed.company || '',
         salary: parsed.salary || '',
+        jobType: parsed.jobType || (/(intern|internship|co-op|trainee)/i.test(rawText) ? 'internship' : 'job'),
         applicationType: parsed.applicationType || 'self',
         jobDescription: parsed.cleanedDescription || rawText.slice(0, 1000),
         keySkills: parsed.keySkills || []
@@ -306,10 +308,15 @@ function fallbackHeuristicParser(text) {
   const commonSkills = ['React', 'Node.js', 'TypeScript', 'JavaScript', 'Python', 'Java', 'SQL', 'PostgreSQL', 'AWS', 'Docker', 'GraphQL'];
   const matchedSkills = commonSkills.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(text));
 
+  const isIntern = /(intern|internship|co-op|coop|trainee|apprentice)/i.test(text);
+  const isContract = /(contract|contractor|freelance|part-time|part time)/i.test(text);
+  const jobType = isIntern ? 'internship' : (isContract ? 'contract' : 'job');
+
   return {
     role: role || (lines[0]?.length < 50 ? lines[0] : 'Software Engineer'),
     company: company || (lines[1]?.length < 40 ? lines[1] : ''),
     salary: salary || '',
+    jobType,
     applicationType: /campus|college|university|grad/i.test(text) ? 'college' : 'self',
     jobDescription: text.slice(0, 1500),
     keySkills: matchedSkills
