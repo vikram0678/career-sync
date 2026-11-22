@@ -1787,23 +1787,88 @@ function App() {
         )}
 
         {recentlyDeleted && (
-          <div style={{
-            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-            background: '#ffffff', color: '#0f172a', padding: '12px 24px',
-            borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '16px', zIndex: 9999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: '2px solid var(--accent-cyan)'
-          }}>
-            <span>Deleted application for <strong>{recentlyDeleted.company}</strong></span>
-            <button
-              onClick={handleUndoDelete}
-              style={{
-                background: 'var(--accent-cyan)', border: 'none', color: '#ffffff',
-                fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '6px 14px', borderRadius: '999px'
-              }}
-            >
-              <RotateCcw size={16} /> Undo
-            </button>
+          <div className="top-toast-banner">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '0.88rem' }}>
+              <span style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#ef4444',
+                boxShadow: '0 0 8px rgba(239, 68, 68, 0.7)',
+                flexShrink: 0
+              }} />
+              <span style={{ color: 'var(--text-muted)' }}>
+                Deleted application for{' '}
+                <strong style={{ color: 'var(--text-main)', fontWeight: '700' }}>
+                  {recentlyDeleted.website || recentlyDeleted.company || recentlyDeleted.role || 'Application'}
+                </strong>
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={handleUndoDelete}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.04)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(2, 132, 199, 0.35)';
+                }}
+              >
+                <RotateCcw size={13} strokeWidth={2.5} /> Undo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRecentlyDeleted(null);
+                  if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+                }}
+                title="Dismiss"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'color 0.15s ease, background 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
         )}
       </div>

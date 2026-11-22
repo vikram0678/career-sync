@@ -704,3 +704,35 @@ select.form-control option {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.45);
 }
+
+/* Top Floating Toast Notification Banner */
+.top-toast-banner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--glass-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text-main);
+  padding: 8px 12px 8px 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 10000;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.15);
+  animation: toastDropIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastDropIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
