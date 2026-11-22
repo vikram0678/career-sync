@@ -262,6 +262,17 @@ function App() {
   const [formType, setFormType] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
 
+  const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
+  const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
+  const [selectedJobType, setSelectedJobType] = useState('all');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const companyDropdownRef = useRef(null);
+
+  const [showCollegeFilters, setShowCollegeFilters] = useState(false);
+  const [showSelfFilters, setShowSelfFilters] = useState(false);
+
   const [goal, setGoal] = useState(() => {
     try {
       const saved = localStorage.getItem('career_sync_goal');
@@ -387,14 +398,6 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
-  const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
-  const [selectedJobType, setSelectedJobType] = useState('all');
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [companySearchQuery, setCompanySearchQuery] = useState('');
-  const companyDropdownRef = useRef(null);
-
   // Click outside to close company dropdown popover
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -407,9 +410,6 @@ function App() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isCompanyDropdownOpen]);
-
-  const [showCollegeFilters, setShowCollegeFilters] = useState(false);
-  const [showSelfFilters, setShowSelfFilters] = useState(false);
 
   useEffect(() => {
     let applicationsChannel = null;
@@ -455,6 +455,9 @@ function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) setAuthLoading(false);
+    }).catch(err => {
+      console.warn("Auth getSession error:", err);
+      setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -879,7 +882,32 @@ function App() {
   const selfApps = applyFilters(rawSelfApps, selfFilters);
   const selfRoles = Array.from(new Set(rawSelfApps.map(a => a.role)));
 
-  if (authLoading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white' }}>Loading CareerSync...</div>;
+  if (authLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: 'var(--bg-base)',
+        color: 'var(--text-main)',
+        gap: '14px'
+      }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          border: '3px solid var(--border-color)',
+          borderTopColor: 'var(--accent-cyan)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <span style={{ fontSize: '0.92rem', fontWeight: '600', color: 'var(--text-muted)', letterSpacing: '-0.01em' }}>
+          Loading CareerSync...
+        </span>
+      </div>
+    );
+  }
   if (!user) return <LoginScreen />;
 
   return (
