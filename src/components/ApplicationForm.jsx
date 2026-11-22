@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, UploadCloud, FileText, Sparkles, Wand2, CheckCircle2, Mail, Video } from 'lucide-react';
 import { parseJobDescription } from '../services/aiService';
 
@@ -28,7 +28,30 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
 
   const [resumeFileObj, setResumeFileObj] = useState(null);
   const [screenshotFileObjs, setScreenshotFileObjs] = useState([]);
+  const screenshotInputRef = useRef(null);
   const [isCustomBond, setIsCustomBond] = useState(false);
+
+  const handleRemoveScreenshot = (indexToRemove) => {
+    const urlToRemove = formData.screenshots?.[indexToRemove];
+    if (urlToRemove && typeof urlToRemove === 'string' && urlToRemove.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(urlToRemove);
+      } catch {}
+    }
+
+    const updatedScreenshots = (formData.screenshots || []).filter((_, idx) => idx !== indexToRemove);
+    const updatedFiles = screenshotFileObjs.filter((_, idx) => idx !== indexToRemove);
+
+    setFormData(prev => ({
+      ...prev,
+      screenshots: updatedScreenshots
+    }));
+    setScreenshotFileObjs(updatedFiles);
+
+    if (updatedScreenshots.length === 0 && screenshotInputRef.current) {
+      screenshotInputRef.current.value = '';
+    }
+  };
 
   const BOND_PRESETS = ['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years'];
 
@@ -449,6 +472,7 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
               type="file"
               id="screenshotFiles"
               name="screenshotFiles"
+              ref={screenshotInputRef}
               className="form-control"
               accept="image/*"
               multiple
@@ -465,9 +489,67 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
               }}
             />
             {formData.screenshots && formData.screenshots.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', overflowX: 'auto' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '14px', flexWrap: 'wrap', padding: '4px 2px' }}>
                 {formData.screenshots.map((src, i) => (
-                  <img key={i} src={src} alt="Preview" style={{ height: '60px', borderRadius: '4px', objectFit: 'cover' }} />
+                  <div 
+                    key={i} 
+                    style={{ 
+                      position: 'relative', 
+                      display: 'inline-block',
+                      borderRadius: '10px'
+                    }}
+                  >
+                    <img 
+                      src={src} 
+                      alt={`Screenshot ${i + 1}`} 
+                      style={{ 
+                        height: '70px', 
+                        width: '105px', 
+                        borderRadius: '10px', 
+                        objectFit: 'cover',
+                        border: '1px solid var(--border-color)',
+                        boxShadow: 'var(--shadow-sm)',
+                        display: 'block'
+                      }} 
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveScreenshot(i);
+                      }}
+                      title="Remove screenshot"
+                      style={{
+                        position: 'absolute',
+                        top: '-7px',
+                        right: '-7px',
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        background: '#ef4444',
+                        color: '#ffffff',
+                        border: '2px solid var(--bg-base)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        padding: 0,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                        transition: 'transform 0.15s ease, background 0.15s ease',
+                        zIndex: 2
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                        e.currentTarget.style.background = '#dc2626';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.background = '#ef4444';
+                      }}
+                    >
+                      <X size={12} strokeWidth={3} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
