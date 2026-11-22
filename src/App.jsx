@@ -252,6 +252,23 @@ function LoginScreen() {
   );
 }
 
+function getLocalJobTypes() {
+  try {
+    return JSON.parse(localStorage.getItem('career_sync_job_types') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveJobTypeLocally(id, jobType) {
+  if (!id || !jobType) return;
+  try {
+    const map = getLocalJobTypes();
+    map[id] = jobType;
+    localStorage.setItem('career_sync_job_types', JSON.stringify(map));
+  } catch {}
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -419,7 +436,14 @@ function App() {
         .from('applications')
         .select('*')
         .eq('userId', userId);
-      if (data && !error) setApplications(data);
+      if (data && !error) {
+        const localTypes = getLocalJobTypes();
+        const enriched = data.map(app => ({
+          ...app,
+          jobType: app.jobType || localTypes[app.id] || (/(intern|internship|co-op|trainee)/i.test(app.role) ? 'internship' : 'job')
+        }));
+        setApplications(enriched);
+      }
     };
 
     const fetchTasks = async (userId) => {
@@ -562,22 +586,37 @@ function App() {
     }
 
     try {
-      const { data, error } = await supabase.from('applications').insert([{
+      const insertPayload = {
         ...newApp,
         resumeUrl: finalResumeUrl,
         screenshots: finalScreenshots,
         userId: user.id,
         addedAt: Date.now()
-      }]).select().single();
+      };
+
+      let { data, error } = await supabase.from('applications').insert([insertPayload]).select().single();
+
+      // Graceful fallback if database schema does not have 'jobType' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
+        const { jobType: _jt, ...sanitizedPayload } = insertPayload;
+        const retryResult = await supabase.from('applications').insert([sanitizedPayload]).select().single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
 
       if (error) throw error;
       if (data) {
-        setApplications(prev => [data, ...prev.filter(a => a.id !== data.id)]);
+        const enriched = {
+          ...data,
+          jobType: data.jobType || newApp.jobType || 'job'
+        };
+        saveJobTypeLocally(data.id, enriched.jobType);
+        setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setFormType(false);
     } catch (error) {
       console.error("Error adding application: ", error);
-      throw new Error("Failed to save application to database.");
+      throw new Error(error.message || "Failed to save application to database.");
     }
   };
 
@@ -596,8 +635,21 @@ function App() {
 
   const handleUpdateApplication = async (updatedApp) => {
     try {
-      const { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
+      let { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
+
+      // Graceful fallback if database schema does not have 'jobType' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
+        const { jobType: _jt, ...sanitized } = updatedApp;
+        const retryResult = await supabase.from('applications').update(sanitized).eq('id', updatedApp.id);
+        error = retryResult.error;
+      }
+
       if (error) throw error;
+
+      if (updatedApp.jobType) {
+        saveJobTypeLocally(updatedApp.id, updatedApp.jobType);
+      }
+
       setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
       if (selectedApp && selectedApp.id === updatedApp.id) {
         setSelectedApp(updatedApp);
@@ -628,10 +680,24 @@ function App() {
   const handleUndoDelete = async () => {
     if (!recentlyDeleted) return;
     try {
-      const { data, error } = await supabase.from('applications').insert([{ ...recentlyDeleted }]).select().single();
+      let { data, error } = await supabase.from('applications').insert([{ ...recentlyDeleted }]).select().single();
+
+      // Graceful fallback if database schema does not have 'jobType' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
+        const { jobType: _jt, ...sanitized } = recentlyDeleted;
+        const retryResult = await supabase.from('applications').insert([sanitized]).select().single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
+
       if (error) throw error;
       if (data) {
-        setApplications(prev => [data, ...prev.filter(a => a.id !== data.id)]);
+        const enriched = {
+          ...data,
+          jobType: data.jobType || recentlyDeleted.jobType || 'job'
+        };
+        saveJobTypeLocally(data.id, enriched.jobType);
+        setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setRecentlyDeleted(null);
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
