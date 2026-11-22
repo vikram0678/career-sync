@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download, Search, X, LayoutGrid, Table } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { PlusCircle, Briefcase, BarChart3, TrendingUp, Filter, LogOut, Moon, Sun, RotateCcw, User, ChevronDown, Download, Search, X, LayoutGrid, Table, Building2, Check } from 'lucide-react';
 import { supabase } from './supabase';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationDetails from './components/ApplicationDetails';
 import ApplicationTable from './components/ApplicationTable';
 import CalendarView from './components/CalendarView';
+import CompanyAvatar from './components/CompanyAvatar';
 import GoalCountdown from './components/GoalCountdown';
 import GoalForm from './components/GoalForm';
 import ProfilePage from './components/ProfilePage';
@@ -27,7 +28,7 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
   };
 
   const handleClear = () => {
-    const empty = { startDate: '', endDate: '', salary: '', role: '' };
+    const empty = { startDate: '', endDate: '', salary: '', role: '', jobType: '' };
     setLocalFilters(empty);
     setFilters(empty);
   };
@@ -89,6 +90,24 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         >
           <option value="">All Roles</option>
           {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '130px' }}>
+        <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          Position Type
+        </label>
+        <select 
+          name="jobType" 
+          value={localFilters.jobType || ''} 
+          onChange={handleChange} 
+          className="form-control" 
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }}
+        >
+          <option value="">All Types</option>
+          <option value="job">💼 Full-Time Job</option>
+          <option value="internship">🎓 Internship</option>
+          <option value="contract">🤝 Contract</option>
         </select>
       </div>
 
@@ -333,6 +352,7 @@ function App() {
         if (formType) setFormType(false);
         if (selectedApp) setSelectedApp(null);
         if (isGoalFormOpen) setIsGoalFormOpen(false);
+        if (isCompanyDropdownOpen) setIsCompanyDropdownOpen(false);
         return;
       }
 
@@ -354,7 +374,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [formType, selectedApp, isGoalFormOpen, activeTab]);
+  }, [formType, selectedApp, isGoalFormOpen, isCompanyDropdownOpen, activeTab]);
 
   // Click outside to close profile dropdown
   useEffect(() => {
@@ -367,8 +387,26 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
-  const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '' });
+  const [collegeFilters, setCollegeFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
+  const [selfFilters, setSelfFilters] = useState({ startDate: '', endDate: '', salary: '', role: '', jobType: '' });
+  const [selectedJobType, setSelectedJobType] = useState('all');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const companyDropdownRef = useRef(null);
+
+  // Click outside to close company dropdown popover
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(event.target)) {
+        setIsCompanyDropdownOpen(false);
+      }
+    };
+    if (isCompanyDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCompanyDropdownOpen]);
 
   const [showCollegeFilters, setShowCollegeFilters] = useState(false);
   const [showSelfFilters, setShowSelfFilters] = useState(false);
@@ -401,7 +439,7 @@ function App() {
           .maybeSingle();
 
         if (data && !error) {
-          if (data.goal) {
+          if (data.goal && data.goal.title && data.goal.targetDate) {
             setGoal(data.goal);
             localStorage.setItem('career_sync_goal', JSON.stringify(data.goal));
           }
@@ -604,13 +642,35 @@ function App() {
     localStorage.setItem('career_sync_goal', JSON.stringify(newGoal));
     if (user) {
       try {
-        const res = await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal, profile }], { onConflict: 'userId' });
-        if (res.error && res.error.code === '42703') {
-          // Fallback if profile column does not exist yet
-          await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal }], { onConflict: 'userId' });
+        const { data: existing } = await supabase
+          .from('user_preferences')
+          .select('id, profile')
+          .eq('userId', user.id)
+          .maybeSingle();
+
+        if (existing?.id) {
+          const { error: updateErr } = await supabase
+            .from('user_preferences')
+            .update({ goal: newGoal, profile: profile || existing.profile })
+            .eq('id', existing.id);
+          if (updateErr) {
+            await supabase.from('user_preferences').update({ goal: newGoal }).eq('id', existing.id);
+          }
+        } else {
+          const { error: insertErr } = await supabase
+            .from('user_preferences')
+            .insert([{ userId: user.id, goal: newGoal, profile }]);
+          if (insertErr) {
+            await supabase.from('user_preferences').insert([{ userId: user.id, goal: newGoal }]);
+          }
         }
       } catch (error) {
         console.error("Error saving goal: ", error);
+        try {
+          await supabase.from('user_preferences').upsert([{ userId: user.id, goal: newGoal }], { onConflict: 'userId' });
+        } catch (e) {
+          console.error("Fallback upsert also failed: ", e);
+        }
       }
     }
     setIsGoalFormOpen(false);
@@ -621,9 +681,35 @@ function App() {
     localStorage.setItem('career_sync_profile', JSON.stringify(updatedProfile));
     if (user) {
       try {
-        await supabase.from('user_preferences').upsert([{ userId: user.id, profile: updatedProfile, goal }], { onConflict: 'userId' });
+        const { data: existing } = await supabase
+          .from('user_preferences')
+          .select('id, goal')
+          .eq('userId', user.id)
+          .maybeSingle();
+
+        if (existing?.id) {
+          const { error: updateErr } = await supabase
+            .from('user_preferences')
+            .update({ profile: updatedProfile, goal: goal || existing.goal })
+            .eq('id', existing.id);
+          if (updateErr) {
+            await supabase.from('user_preferences').update({ profile: updatedProfile }).eq('id', existing.id);
+          }
+        } else {
+          const { error: insertErr } = await supabase
+            .from('user_preferences')
+            .insert([{ userId: user.id, profile: updatedProfile, goal }]);
+          if (insertErr) {
+            await supabase.from('user_preferences').insert([{ userId: user.id, profile: updatedProfile }]);
+          }
+        }
       } catch (error) {
         console.error("Error saving profile: ", error);
+        try {
+          await supabase.from('user_preferences').upsert([{ userId: user.id, profile: updatedProfile }], { onConflict: 'userId' });
+        } catch (e) {
+          console.error("Fallback upsert profile also failed: ", e);
+        }
       }
     }
   };
@@ -644,7 +730,7 @@ function App() {
       alert("No applications to export yet!");
       return;
     }
-    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Type", "Resume Used"];
+    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Position Type", "Track", "Resume Used"];
     const rows = applications.map(app => [
       `"${(app.role || '').replace(/"/g, '""')}"`,
       `"${(app.website || '').replace(/"/g, '""')}"`,
@@ -654,7 +740,8 @@ function App() {
       `"${app.appliedDate || ''}"`,
       `"${app.status || ''}"`,
       `"${(app.salary || '').replace(/"/g, '""')}"`,
-      `"${app.applicationType || 'self'}"`,
+      `"${app.jobType === 'internship' ? 'Internship' : app.jobType === 'contract' ? 'Contract' : 'Full-Time Job'}"`,
+      `"${app.applicationType === 'college' ? 'College' : 'Self'}"`,
       `"${(app.resumeUsed || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -718,6 +805,10 @@ function App() {
 
   const applyFilters = (apps, filters) => {
     return apps.filter(app => {
+      const appJobType = app.jobType || 'job';
+      if (selectedJobType !== 'all' && appJobType !== selectedJobType) return false;
+      if (filters.jobType && appJobType !== filters.jobType) return false;
+      if (selectedCompany && (app.website || 'Other').trim().toLowerCase() !== selectedCompany.toLowerCase()) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesSearch = 
@@ -738,7 +829,25 @@ function App() {
 
   const sortedApplications = [...applications].sort((a, b) => b.addedAt - a.addedAt);
 
+  const uniqueCompanies = useMemo(() => {
+    const map = {};
+    sortedApplications.forEach(app => {
+      const name = (app.website || 'Other').trim();
+      if (!name) return;
+      if (!map[name]) {
+        map[name] = { count: 0, careerPageUrl: app.careerPageUrl };
+      }
+      map[name].count++;
+    });
+    return Object.entries(map)
+      .map(([name, data]) => ({ name, count: data.count, url: data.careerPageUrl }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [sortedApplications]);
+
   const kanbanApps = sortedApplications.filter(app => {
+    const appJobType = app.jobType || 'job';
+    if (selectedJobType !== 'all' && appJobType !== selectedJobType) return false;
+    if (selectedCompany && (app.website || 'Other').trim().toLowerCase() !== selectedCompany.toLowerCase()) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = 
@@ -750,6 +859,17 @@ function App() {
     }
     return true;
   });
+
+  const scopedAppsForCounts = selectedCompany
+    ? sortedApplications.filter(a => (a.website || 'Other').trim().toLowerCase() === selectedCompany.toLowerCase())
+    : sortedApplications;
+
+  const jobTypeCounts = {
+    all: scopedAppsForCounts.length,
+    job: scopedAppsForCounts.filter(a => (a.jobType || 'job') === 'job').length,
+    internship: scopedAppsForCounts.filter(a => a.jobType === 'internship').length,
+    contract: scopedAppsForCounts.filter(a => a.jobType === 'contract').length
+  };
 
   const rawCollegeApps = sortedApplications.filter(a => a.applicationType === 'college');
   const collegeApps = applyFilters(rawCollegeApps, collegeFilters);
@@ -1082,7 +1202,311 @@ function App() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  {/* Job Type Segmented Filter Pills */}
+                  <div style={{
+                    display: 'flex',
+                    background: 'var(--glass-border)',
+                    padding: '3px',
+                    borderRadius: '10px',
+                    gap: '2px'
+                  }}>
+                    {[
+                      { id: 'all', label: 'All', count: jobTypeCounts.all },
+                      { id: 'job', label: '💼 Jobs', count: jobTypeCounts.job },
+                      { id: 'internship', label: '🎓 Internships', count: jobTypeCounts.internship },
+                      { id: 'contract', label: '🤝 Contract', count: jobTypeCounts.contract }
+                    ].map(tab => {
+                      const isActive = selectedJobType === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setSelectedJobType(tab.id)}
+                          style={{
+                            padding: '7px 12px',
+                            fontSize: '0.82rem',
+                            background: isActive ? 'var(--glass-bg)' : 'transparent',
+                            color: isActive ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                            fontWeight: isActive ? '800' : '600',
+                            borderRadius: '8px',
+                            border: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer',
+                            boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title={`Filter by ${tab.label}`}
+                        >
+                          <span>{tab.label}</span>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            padding: '1px 6px',
+                            borderRadius: '999px',
+                            background: isActive ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                            color: isActive ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                            fontWeight: '700'
+                          }}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Interactive Company Filter Dropdown */}
+                  <div ref={companyDropdownRef} style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCompanyDropdownOpen(prev => !prev);
+                        setCompanySearchQuery('');
+                      }}
+                      style={{
+                        padding: '7px 12px',
+                        fontSize: '0.82rem',
+                        background: selectedCompany 
+                          ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)' 
+                          : 'var(--glass-bg)',
+                        border: selectedCompany 
+                          ? '1px solid rgba(56, 189, 248, 0.45)' 
+                          : '1px solid var(--glass-border)',
+                        color: selectedCompany ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        fontWeight: selectedCompany ? '800' : '600',
+                        borderRadius: '9px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        boxShadow: selectedCompany ? '0 2px 8px rgba(56, 189, 248, 0.15)' : 'none',
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title={selectedCompany ? `Filtered by ${selectedCompany}. Click to change or clear.` : 'Filter by Company'}
+                    >
+                      <Building2 size={14} color={selectedCompany ? 'var(--accent-cyan)' : 'var(--text-muted)'} />
+                      <span>{selectedCompany ? selectedCompany : `${uniqueCompanies.length} Companies`}</span>
+                      {selectedCompany ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCompany('');
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            background: 'rgba(56, 189, 248, 0.25)',
+                            marginLeft: '2px',
+                            cursor: 'pointer'
+                          }}
+                          title="Clear company filter"
+                        >
+                          <X size={11} />
+                        </span>
+                      ) : (
+                        <ChevronDown 
+                          size={13} 
+                          style={{ 
+                            transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'none', 
+                            transition: 'transform 0.2s ease',
+                            opacity: 0.7 
+                          }} 
+                        />
+                      )}
+                    </button>
+
+                    {/* Dropdown Popover */}
+                    {isCompanyDropdownOpen && (
+                      <div
+                        className="glass glass-panel"
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          zIndex: 1050,
+                          width: '270px',
+                          maxHeight: '340px',
+                          borderRadius: '14px',
+                          background: 'var(--glass-bg)',
+                          backdropFilter: 'blur(20px)',
+                          WebkitBackdropFilter: 'blur(20px)',
+                          border: '1px solid var(--glass-border)',
+                          boxShadow: '0 14px 35px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.15)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {/* Popover Header */}
+                        <div style={{
+                          padding: '12px 14px 10px 14px',
+                          borderBottom: '1px solid var(--border-color)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          background: 'rgba(255, 255, 255, 0.02)'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+                              Targeted Companies
+                            </span>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              fontWeight: '700',
+                              padding: '1px 6px',
+                              borderRadius: '999px',
+                              background: 'rgba(56, 189, 248, 0.12)',
+                              color: 'var(--accent-cyan)'
+                            }}>
+                              {uniqueCompanies.length} Total
+                            </span>
+                          </div>
+
+                          {/* Quick Search inside companies if > 4 */}
+                          {uniqueCompanies.length > 4 && (
+                            <div style={{ position: 'relative' }}>
+                              <Search size={13} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                              <input
+                                type="text"
+                                value={companySearchQuery}
+                                onChange={(e) => setCompanySearchQuery(e.target.value)}
+                                placeholder="Search companies..."
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 26px 6px 28px',
+                                  fontSize: '0.8rem',
+                                  borderRadius: '8px',
+                                  background: 'var(--glass-card)',
+                                  border: '1px solid var(--border-color)',
+                                  color: 'var(--text-main)',
+                                  outline: 'none'
+                                }}
+                                autoFocus
+                              />
+                              {companySearchQuery && (
+                                <X 
+                                  size={13} 
+                                  onClick={() => setCompanySearchQuery('')}
+                                  style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-muted)' }}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Companies List */}
+                        <div style={{ overflowY: 'auto', maxHeight: '240px', padding: '6px' }}>
+                          {/* All Companies Reset Option */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCompany('');
+                              setIsCompanyDropdownOpen(false);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              background: !selectedCompany ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
+                              color: !selectedCompany ? 'var(--accent-cyan)' : 'var(--text-main)',
+                              fontWeight: !selectedCompany ? '700' : '500',
+                              fontSize: '0.82rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'background 0.15s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.72rem',
+                                fontWeight: '700'
+                              }}>
+                                🌐
+                              </div>
+                              <span>All Companies</span>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                              {sortedApplications.length}
+                            </span>
+                          </button>
+
+                          {/* Filtered Company Items */}
+                          {uniqueCompanies
+                            .filter(c => !companySearchQuery.trim() || c.name.toLowerCase().includes(companySearchQuery.toLowerCase().trim()))
+                            .map(c => {
+                              const isSelected = selectedCompany.toLowerCase() === c.name.toLowerCase();
+                              return (
+                                <button
+                                  key={c.name}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCompany(isSelected ? '' : c.name);
+                                    setIsCompanyDropdownOpen(false);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '7px 10px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                                    color: isSelected ? 'var(--accent-cyan)' : 'var(--text-main)',
+                                    fontWeight: isSelected ? '700' : '500',
+                                    fontSize: '0.82rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'background 0.12s ease'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                    <CompanyAvatar company={c.name} url={c.url} size={24} borderRadius={6} />
+                                    <span style={{ 
+                                      whiteSpace: 'nowrap', 
+                                      overflow: 'hidden', 
+                                      textOverflow: 'ellipsis',
+                                      maxWidth: '150px' 
+                                    }}>
+                                      {c.name}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{
+                                      fontSize: '0.7rem',
+                                      padding: '1px 6px',
+                                      borderRadius: '999px',
+                                      background: isSelected ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                                      color: isSelected ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                                      fontWeight: '700'
+                                    }}>
+                                      {c.count}
+                                    </span>
+                                    {isSelected && <Check size={13} color="var(--accent-cyan)" />}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {searchQuery && (
                     <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: '700', whiteSpace: 'nowrap' }}>
                       {viewMode === 'kanban' ? kanbanApps.length : (collegeApps.length + selfApps.length)} match{(viewMode === 'kanban' ? kanbanApps.length : (collegeApps.length + selfApps.length)) === 1 ? '' : 'es'}
