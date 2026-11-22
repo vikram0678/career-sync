@@ -1,10 +1,27 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 
+function normalizeDateForInput(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr).slice(0, 16);
+    const pad = (n) => String(n).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch {
+    return String(dateStr || '').slice(0, 16);
+  }
+}
+
 function GoalForm({ initialGoal, onClose, onSubmit }) {
-  const [formData, setFormData] = useState(initialGoal || {
-    title: '',
-    targetDate: ''
+  const [formData, setFormData] = useState({
+    title: initialGoal?.title || '',
+    targetDate: normalizeDateForInput(initialGoal?.targetDate)
   });
 
   const handleChange = (e) => {
