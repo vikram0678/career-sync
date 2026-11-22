@@ -252,21 +252,32 @@ function LoginScreen() {
   );
 }
 
-function getLocalJobTypes() {
+function getLocalAppMeta() {
   try {
-    return JSON.parse(localStorage.getItem('career_sync_job_types') || '{}');
+    return JSON.parse(localStorage.getItem('career_sync_app_meta') || '{}');
   } catch {
     return {};
   }
 }
 
-function saveJobTypeLocally(id, jobType) {
-  if (!id || !jobType) return;
+function saveLocalAppMeta(id, meta) {
+  if (!id || !meta) return;
   try {
-    const map = getLocalJobTypes();
-    map[id] = jobType;
-    localStorage.setItem('career_sync_job_types', JSON.stringify(map));
+    const map = getLocalAppMeta();
+    map[id] = { ...(map[id] || {}), ...meta };
+    localStorage.setItem('career_sync_app_meta', JSON.stringify(map));
   } catch {}
+}
+
+function getEnrichedAppMeta(app) {
+  const localMeta = getLocalAppMeta();
+  let localJobTypes = {};
+  try { localJobTypes = JSON.parse(localStorage.getItem('career_sync_job_types') || '{}'); } catch {}
+  const appMeta = localMeta[app.id] || {};
+  return {
+    jobType: app.jobType || appMeta.jobType || localJobTypes[app.id] || (/(intern|internship|co-op|trainee)/i.test(app.role) ? 'internship' : 'job'),
+    bond: app.bond || appMeta.bond || ''
+  };
 }
 
 function App() {
@@ -437,11 +448,14 @@ function App() {
         .select('*')
         .eq('userId', userId);
       if (data && !error) {
-        const localTypes = getLocalJobTypes();
-        const enriched = data.map(app => ({
-          ...app,
-          jobType: app.jobType || localTypes[app.id] || (/(intern|internship|co-op|trainee)/i.test(app.role) ? 'internship' : 'job')
-        }));
+        const enriched = data.map(app => {
+          const meta = getEnrichedAppMeta(app);
+          return {
+            ...app,
+            jobType: meta.jobType,
+            bond: meta.bond
+          };
+        });
         setApplications(enriched);
       }
     };
@@ -596,9 +610,9 @@ function App() {
 
       let { data, error } = await supabase.from('applications').insert([insertPayload]).select().single();
 
-      // Graceful fallback if database schema does not have 'jobType' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
-        const { jobType: _jt, ...sanitizedPayload } = insertPayload;
+      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
+        const { jobType: _jt, bond: _b, ...sanitizedPayload } = insertPayload;
         const retryResult = await supabase.from('applications').insert([sanitizedPayload]).select().single();
         data = retryResult.data;
         error = retryResult.error;
@@ -608,9 +622,10 @@ function App() {
       if (data) {
         const enriched = {
           ...data,
-          jobType: data.jobType || newApp.jobType || 'job'
+          jobType: data.jobType || newApp.jobType || 'job',
+          bond: data.bond || newApp.bond || ''
         };
-        saveJobTypeLocally(data.id, enriched.jobType);
+        saveLocalAppMeta(data.id, { jobType: enriched.jobType, bond: enriched.bond });
         setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setFormType(false);
@@ -637,18 +652,19 @@ function App() {
     try {
       let { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
 
-      // Graceful fallback if database schema does not have 'jobType' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
-        const { jobType: _jt, ...sanitized } = updatedApp;
+      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
+        const { jobType: _jt, bond: _b, ...sanitized } = updatedApp;
         const retryResult = await supabase.from('applications').update(sanitized).eq('id', updatedApp.id);
         error = retryResult.error;
       }
 
       if (error) throw error;
 
-      if (updatedApp.jobType) {
-        saveJobTypeLocally(updatedApp.id, updatedApp.jobType);
-      }
+      saveLocalAppMeta(updatedApp.id, {
+        jobType: updatedApp.jobType || 'job',
+        bond: updatedApp.bond || ''
+      });
 
       setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
       if (selectedApp && selectedApp.id === updatedApp.id) {
@@ -682,9 +698,9 @@ function App() {
     try {
       let { data, error } = await supabase.from('applications').insert([{ ...recentlyDeleted }]).select().single();
 
-      // Graceful fallback if database schema does not have 'jobType' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType'))) {
-        const { jobType: _jt, ...sanitized } = recentlyDeleted;
+      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
+      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
+        const { jobType: _jt, bond: _b, ...sanitized } = recentlyDeleted;
         const retryResult = await supabase.from('applications').insert([sanitized]).select().single();
         data = retryResult.data;
         error = retryResult.error;
@@ -694,9 +710,10 @@ function App() {
       if (data) {
         const enriched = {
           ...data,
-          jobType: data.jobType || recentlyDeleted.jobType || 'job'
+          jobType: data.jobType || recentlyDeleted.jobType || 'job',
+          bond: data.bond || recentlyDeleted.bond || ''
         };
-        saveJobTypeLocally(data.id, enriched.jobType);
+        saveLocalAppMeta(data.id, { jobType: enriched.jobType, bond: enriched.bond });
         setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setRecentlyDeleted(null);
@@ -799,7 +816,7 @@ function App() {
       alert("No applications to export yet!");
       return;
     }
-    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Position Type", "Track", "Resume Used"];
+    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Position Type", "Service Bond", "Track", "Resume Used"];
     const rows = applications.map(app => [
       `"${(app.role || '').replace(/"/g, '""')}"`,
       `"${(app.website || '').replace(/"/g, '""')}"`,
@@ -810,6 +827,7 @@ function App() {
       `"${app.status || ''}"`,
       `"${(app.salary || '').replace(/"/g, '""')}"`,
       `"${app.jobType === 'internship' ? 'Internship' : app.jobType === 'contract' ? 'Contract' : 'Full-Time Job'}"`,
+      `"${(app.bond || 'No Bond').replace(/"/g, '""')}"`,
       `"${app.applicationType === 'college' ? 'College' : 'Self'}"`,
       `"${(app.resumeUsed || '').replace(/"/g, '""')}"`
     ]);

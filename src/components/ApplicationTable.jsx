@@ -182,27 +182,46 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                   </div>
                 </td>
 
-                {/* Compensation */}
+                {/* Compensation & Bond */}
                 <td>
-                  {app.salary ? (
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '4px', 
-                      fontSize: '0.82rem', 
-                      fontWeight: '700',
-                      color: 'var(--accent-green)',
-                      background: 'rgba(74, 222, 128, 0.1)',
-                      border: '1px solid rgba(74, 222, 128, 0.25)',
-                      padding: '2px 8px',
-                      borderRadius: '6px'
-                    }}>
-                      <DollarSign size={12} />
-                      {app.salary}
-                    </div>
-                  ) : (
-                    <span style={{ color: 'var(--text-sub)', fontSize: '0.85rem' }}>—</span>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                    {app.salary ? (
+                      <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '4px', 
+                        fontSize: '0.82rem', 
+                        fontWeight: '700',
+                        color: 'var(--accent-green)',
+                        background: 'rgba(74, 222, 128, 0.1)',
+                        border: '1px solid rgba(74, 222, 128, 0.25)',
+                        padding: '2px 8px',
+                        borderRadius: '6px'
+                      }}>
+                        <DollarSign size={12} />
+                        {app.salary}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-sub)', fontSize: '0.85rem' }}>—</span>
+                    )}
+                    {app.bond && !/none|no bond/i.test(app.bond) && (
+                      <span style={{
+                        fontSize: '0.67rem',
+                        fontWeight: '700',
+                        color: '#f59e0b',
+                        background: 'rgba(245, 158, 11, 0.12)',
+                        border: '1px solid rgba(245, 158, 11, 0.28)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.01em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px'
+                      }} title={`Service Agreement / Bond: ${app.bond}`}>
+                        ⏳ {app.bond} bond
+                      </span>
+                    )}
+                  </div>
                 </td>
 
                 {/* Status Badge & Stagnant Indicator */}

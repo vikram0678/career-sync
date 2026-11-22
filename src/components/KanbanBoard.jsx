@@ -393,7 +393,7 @@ function KanbanBoard({
                           {app.appliedDate || 'No date'}
                         </span>
                         
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {app.salary && (
                             <span style={{ 
                               display: 'inline-flex', 
@@ -406,6 +406,23 @@ function KanbanBoard({
                               borderRadius: '4px'
                             }}>
                               <DollarSign size={10} /> {app.salary}
+                            </span>
+                          )}
+
+                          {app.bond && !/none|no bond/i.test(app.bond) && (
+                            <span style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '2px', 
+                              color: '#f59e0b', 
+                              fontWeight: '700',
+                              background: 'rgba(245, 158, 11, 0.12)',
+                              border: '1px solid rgba(245, 158, 11, 0.25)',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              fontSize: '0.68rem'
+                            }} title={`Service Bond: ${app.bond}`}>
+                              ⏳ {app.bond}
                             </span>
                           )}
 

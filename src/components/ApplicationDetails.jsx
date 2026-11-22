@@ -92,6 +92,7 @@ function ApplicationDetails({
     appliedDate: app.appliedDate || '',
     status: app.status || 'applied',
     jobType: app.jobType || 'job',
+    bond: app.bond || '',
     applicationType: app.applicationType || 'self',
     salary: app.salary || '',
     resumeLink: app.resumeLink || '',
@@ -99,6 +100,25 @@ function ApplicationDetails({
     meetingUrl: app.meetingUrl || '',
     jobDescription: app.jobDescription || ''
   });
+
+  const BOND_PRESETS = ['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years'];
+  const [isCustomEditBond, setIsCustomEditBond] = useState(
+    Boolean(app.bond && !BOND_PRESETS.includes(app.bond) && !/none|no bond/i.test(app.bond))
+  );
+
+  const handleEditBondSelectChange = (e) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+      setIsCustomEditBond(true);
+      setEditForm(prev => ({
+        ...prev,
+        bond: (prev.bond && !BOND_PRESETS.includes(prev.bond) && !/none|no bond/i.test(prev.bond)) ? prev.bond : ''
+      }));
+    } else {
+      setIsCustomEditBond(false);
+      setEditForm(prev => ({ ...prev, bond: val }));
+    }
+  };
 
   const handleEditChange = (e) => {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
@@ -357,7 +377,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.1fr 1.2fr', gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label>Applied Date</label>
                   <input
@@ -390,8 +410,38 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                     className="form-control"
                     value={editForm.salary}
                     onChange={handleEditChange}
-                    placeholder="e.g. $100k or 30k/mo"
+                    placeholder="e.g. ₹6-8 LPA or $100k"
                   />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label>Service Bond / Terms</label>
+                  <select
+                    name="bondSelect"
+                    className="form-control"
+                    value={isCustomEditBond || (editForm.bond && !BOND_PRESETS.includes(editForm.bond) && !/none|no bond/i.test(editForm.bond)) ? 'custom' : (editForm.bond || '')}
+                    onChange={handleEditBondSelectChange}
+                    style={{ fontWeight: '600' }}
+                  >
+                    <option value="">🛡️ No Bond</option>
+                    <option value="6 Months">⏳ 6 Months</option>
+                    <option value="1 Year">⏳ 1 Year</option>
+                    <option value="1.5 Years">⏳ 1.5 Years</option>
+                    <option value="2 Years">⚠️ 2 Years</option>
+                    <option value="3 Years">⚠️ 3 Years</option>
+                    <option value="custom">✏️ Custom...</option>
+                  </select>
+                  {(isCustomEditBond || (editForm.bond && !BOND_PRESETS.includes(editForm.bond) && !/none|no bond/i.test(editForm.bond))) && (
+                    <input
+                      type="text"
+                      name="bond"
+                      className="form-control"
+                      style={{ marginTop: '6px', fontSize: '0.85rem' }}
+                      value={editForm.bond}
+                      onChange={handleEditChange}
+                      placeholder="e.g. 2 yrs + ₹1L penalty"
+                      autoFocus
+                    />
+                  )}
                 </div>
               </div>
 
@@ -462,6 +512,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                       appliedDate: app.appliedDate || '',
                       status: app.status || 'applied',
                       jobType: app.jobType || 'job',
+                      bond: app.bond || '',
                       applicationType: app.applicationType || 'self',
                       salary: app.salary || '',
                       resumeLink: app.resumeLink || '',
@@ -469,6 +520,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                       meetingUrl: app.meetingUrl || '',
                       jobDescription: app.jobDescription || ''
                     });
+                    setIsCustomEditBond(Boolean(app.bond && !BOND_PRESETS.includes(app.bond) && !/none|no bond/i.test(app.bond)));
                     setIsEditing(false);
                   }}
                   disabled={isSaving}
@@ -550,6 +602,22 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                           fontSize: '0.8rem'
                         }}>
                           <DollarSign size={12} /> {app.salary}
+                        </span>
+                      )}
+                      {app.bond && (
+                        <span style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          color: /none|no bond/i.test(app.bond) ? 'var(--text-muted)' : '#f59e0b',
+                          background: /none|no bond/i.test(app.bond) ? 'rgba(255, 255, 255, 0.06)' : 'rgba(245, 158, 11, 0.12)',
+                          border: `1px solid ${/none|no bond/i.test(app.bond) ? 'var(--border-color)' : 'rgba(245, 158, 11, 0.3)'}`,
+                          padding: '1px 8px',
+                          borderRadius: '6px',
+                          fontWeight: '700',
+                          fontSize: '0.8rem'
+                        }} title={`Service Agreement / Bond: ${app.bond}`}>
+                          {/none|no bond/i.test(app.bond) ? '🛡️ No Bond' : `⏳ ${app.bond} Bond`}
                         </span>
                       )}
                       {app.emailThreadUrl && (

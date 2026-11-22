@@ -96,6 +96,7 @@ Return JSON with the following keys:
 - "company": string (company name, e.g. "Stripe")
 - "salary": string (compensation or stipend if mentioned, or empty string)
 - "jobType": "job" (default full-time), "internship" (if intern/co-op/trainee), or "contract"
+- "bond": string (service bond, commitment period, or probation if mentioned e.g. "1 Year", "2 Years", "No Bond", or empty string)
 - "applicationType": "self" (default) or "college" (if campus/university is mentioned)
 - "cleanedDescription": string (concise summary of requirements & responsibilities, max 400 words)
 - "keySkills": string[] (up to 6 core technical skills mentioned)`;
@@ -109,6 +110,7 @@ Return JSON with the following keys:
         company: parsed.company || '',
         salary: parsed.salary || '',
         jobType: parsed.jobType || (/(intern|internship|co-op|trainee)/i.test(rawText) ? 'internship' : 'job'),
+        bond: parsed.bond || '',
         applicationType: parsed.applicationType || 'self',
         jobDescription: parsed.cleanedDescription || rawText.slice(0, 1000),
         keySkills: parsed.keySkills || []
@@ -312,11 +314,18 @@ function fallbackHeuristicParser(text) {
   const isContract = /(contract|contractor|freelance|part-time|part time)/i.test(text);
   const jobType = isIntern ? 'internship' : (isContract ? 'contract' : 'job');
 
+  let bond = '';
+  const bondMatch = text.match(/(\b\d+(?:\.\d+)?\s*(?:year|yr|month|mo)s?\b(?:\s*(?:bond|service agreement|commitment|lock-in))|(?:bond|service agreement|commitment|lock-in)\s*(?:of|for|:)?\s*\b\d+(?:\.\d+)?\s*(?:year|yr|month|mo)s?\b|no\s+bond)/i);
+  if (bondMatch) {
+    bond = bondMatch[0].trim();
+  }
+
   return {
     role: role || (lines[0]?.length < 50 ? lines[0] : 'Software Engineer'),
     company: company || (lines[1]?.length < 40 ? lines[1] : ''),
     salary: salary || '',
     jobType,
+    bond,
     applicationType: /campus|college|university|grad/i.test(text) ? 'college' : 'self',
     jobDescription: text.slice(0, 1500),
     keySkills: matchedSkills

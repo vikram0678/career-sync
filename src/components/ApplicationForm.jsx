@@ -12,6 +12,7 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
     jobDescription: '',
     status: 'applied',
     jobType: 'job',
+    bond: '',
     applicationType: initialType || 'self',
     salary: '',
     resumeLink: '',
@@ -27,6 +28,23 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
 
   const [resumeFileObj, setResumeFileObj] = useState(null);
   const [screenshotFileObjs, setScreenshotFileObjs] = useState([]);
+  const [isCustomBond, setIsCustomBond] = useState(false);
+
+  const BOND_PRESETS = ['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years'];
+
+  const handleBondSelectChange = (e) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+      setIsCustomBond(true);
+      setFormData(prev => ({
+        ...prev,
+        bond: (prev.bond && !BOND_PRESETS.includes(prev.bond) && !/none|no bond/i.test(prev.bond)) ? prev.bond : ''
+      }));
+    } else {
+      setIsCustomBond(false);
+      setFormData(prev => ({ ...prev, bond: val }));
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,9 +62,13 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
         website: parsed.company || prev.website,
         salary: parsed.salary || prev.salary,
         jobType: parsed.jobType || prev.jobType || 'job',
+        bond: parsed.bond || prev.bond || '',
         jobDescription: parsed.jobDescription || prev.jobDescription,
         applicationType: parsed.applicationType || prev.applicationType
       }));
+      if (parsed.bond && !['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years', ''].includes(parsed.bond)) {
+        setIsCustomBond(true);
+      }
       setMagicParseSuccess(true);
       setTimeout(() => setMagicParseSuccess(false), 3500);
     } catch (err) {
@@ -246,7 +268,7 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.1fr 1.2fr', gap: '16px' }}>
             <div className="form-group">
               <label htmlFor="appliedDate">Applied Date</label>
               <input
@@ -282,8 +304,38 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
                 className="form-control"
                 value={formData.salary}
                 onChange={handleChange}
-                placeholder="e.g. $100k or 20k/mo"
+                placeholder="e.g. ₹6-8 LPA or $100k"
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="bond">Service Bond / Terms</label>
+              <select
+                id="bond"
+                className="form-control"
+                value={isCustomBond || (formData.bond && !BOND_PRESETS.includes(formData.bond) && !/none|no bond/i.test(formData.bond)) ? 'custom' : (formData.bond || '')}
+                onChange={handleBondSelectChange}
+                style={{ fontWeight: '600' }}
+              >
+                <option value="">🛡️ No Bond</option>
+                <option value="6 Months">⏳ 6 Months</option>
+                <option value="1 Year">⏳ 1 Year</option>
+                <option value="1.5 Years">⏳ 1.5 Years</option>
+                <option value="2 Years">⚠️ 2 Years</option>
+                <option value="3 Years">⚠️ 3 Years</option>
+                <option value="custom">✏️ Custom...</option>
+              </select>
+              {(isCustomBond || (formData.bond && !BOND_PRESETS.includes(formData.bond) && !/none|no bond/i.test(formData.bond))) && (
+                <input
+                  type="text"
+                  name="bond"
+                  className="form-control"
+                  style={{ marginTop: '6px', fontSize: '0.85rem' }}
+                  value={formData.bond}
+                  onChange={handleChange}
+                  placeholder="e.g. 2 yrs + ₹1.5L penalty"
+                  autoFocus
+                />
+              )}
             </div>
           </div>
 
