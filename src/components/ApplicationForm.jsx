@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { X, UploadCloud, FileText, Sparkles, Wand2, CheckCircle2, Mail, Video } from 'lucide-react';
 import { parseJobDescription } from '../services/aiService';
+import { getTodayISO } from '../utils/dateUtils';
+import { RejectedDateInputStrip } from './RejectedDateBanner';
 
 function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
   const [formData, setFormData] = useState({
@@ -8,7 +10,8 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
     website: '',
     careerPageUrl: '',
     resumeUsed: '',
-    appliedDate: new Date().toISOString().split('T')[0],
+    appliedDate: getTodayISO(),
+    rejectedDate: '',
     jobDescription: '',
     status: 'applied',
     jobType: 'job',
@@ -70,7 +73,16 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'status') {
+      setFormData(prev => ({
+        ...prev,
+        status: value,
+        rejectedDate: value === 'rejected' ? (prev.rejectedDate || getTodayISO()) : ''
+      }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleMagicParse = async () => {
@@ -361,6 +373,14 @@ function ApplicationForm({ onClose, onSubmit, initialType, profile }) {
               )}
             </div>
           </div>
+
+          {formData.status === 'rejected' && (
+            <RejectedDateInputStrip
+              appliedDate={formData.appliedDate}
+              rejectedDate={formData.rejectedDate}
+              onChange={handleChange}
+            />
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">

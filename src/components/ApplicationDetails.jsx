@@ -27,6 +27,29 @@ import {
 } from 'lucide-react';
 import { generateInterviewPrep, generateResumeBullets } from '../services/aiService';
 import CompanyAvatar from './CompanyAvatar';
+import { getTodayISO } from '../utils/dateUtils';
+import { RejectedDateInputStrip, RejectionLifecycleBanner } from './RejectedDateBanner';
+
+const BOND_PRESETS = ['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years'];
+
+function buildEditFormFromApp(app) {
+  return {
+    role: app.role || '',
+    website: app.website || '',
+    careerPageUrl: app.careerPageUrl || '',
+    appliedDate: app.appliedDate || '',
+    status: app.status || 'applied',
+    rejectedDate: app.status === 'rejected' ? (app.rejectedDate || '') : '',
+    jobType: app.jobType || 'job',
+    bond: app.bond || '',
+    applicationType: app.applicationType || 'self',
+    salary: app.salary || '',
+    resumeLink: app.resumeLink || '',
+    emailThreadUrl: app.emailThreadUrl || '',
+    meetingUrl: app.meetingUrl || '',
+    jobDescription: app.jobDescription || ''
+  };
+}
 
 function FileViewerModal({ fileUrl, fileType, onClose }) {
   let displayUrl = fileUrl;
@@ -85,26 +108,16 @@ function ApplicationDetails({
   const [copiedAllPrep, setCopiedAllPrep] = useState(false);
 
   // Editable form state initialized from app
-  const [editForm, setEditForm] = useState({
-    role: app.role || '',
-    website: app.website || '',
-    careerPageUrl: app.careerPageUrl || '',
-    appliedDate: app.appliedDate || '',
-    status: app.status || 'applied',
-    jobType: app.jobType || 'job',
-    bond: app.bond || '',
-    applicationType: app.applicationType || 'self',
-    salary: app.salary || '',
-    resumeLink: app.resumeLink || '',
-    emailThreadUrl: app.emailThreadUrl || '',
-    meetingUrl: app.meetingUrl || '',
-    jobDescription: app.jobDescription || ''
-  });
+  const [editForm, setEditForm] = useState(() => buildEditFormFromApp(app));
 
-  const BOND_PRESETS = ['6 Months', '1 Year', '1.5 Years', '2 Years', '3 Years'];
   const [isCustomEditBond, setIsCustomEditBond] = useState(
     Boolean(app.bond && !BOND_PRESETS.includes(app.bond) && !/none|no bond/i.test(app.bond))
   );
+
+  const resetEditState = () => {
+    setEditForm(buildEditFormFromApp(app));
+    setIsCustomEditBond(Boolean(app.bond && !BOND_PRESETS.includes(app.bond) && !/none|no bond/i.test(app.bond)));
+  };
 
   const handleEditBondSelectChange = (e) => {
     const val = e.target.value;
@@ -121,7 +134,16 @@ function ApplicationDetails({
   };
 
   const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'status') {
+      setEditForm(prev => ({
+        ...prev,
+        status: value,
+        rejectedDate: value === 'rejected' ? (prev.rejectedDate || getTodayISO()) : ''
+      }));
+      return;
+    }
+    setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveEdit = async (e) => {
@@ -295,7 +317,10 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
               {onUpdateApplication && !isEditing && (
                 <button
                   className="btn btn-secondary"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    resetEditState();
+                    setIsEditing(true);
+                  }}
                   style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   <Edit2 size={15} /> Edit Application
@@ -445,6 +470,14 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                 </div>
               </div>
 
+              {editForm.status === 'rejected' && (
+                <RejectedDateInputStrip
+                  appliedDate={editForm.appliedDate}
+                  rejectedDate={editForm.rejectedDate}
+                  onChange={handleEditChange}
+                />
+              )}
+
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label>External Resume Link (Optional)</label>
                 <input
@@ -505,22 +538,7 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => {
-                    setEditForm({
-                      role: app.role || '',
-                      website: app.website || '',
-                      careerPageUrl: app.careerPageUrl || '',
-                      appliedDate: app.appliedDate || '',
-                      status: app.status || 'applied',
-                      jobType: app.jobType || 'job',
-                      bond: app.bond || '',
-                      applicationType: app.applicationType || 'self',
-                      salary: app.salary || '',
-                      resumeLink: app.resumeLink || '',
-                      emailThreadUrl: app.emailThreadUrl || '',
-                      meetingUrl: app.meetingUrl || '',
-                      jobDescription: app.jobDescription || ''
-                    });
-                    setIsCustomEditBond(Boolean(app.bond && !BOND_PRESETS.includes(app.bond) && !/none|no bond/i.test(app.bond)));
+                    resetEditState();
                     setIsEditing(false);
                   }}
                   disabled={isSaving}
@@ -687,6 +705,15 @@ ${profile?.portfolioUrl || profile?.githubUrl || ''}`;
                   </select>
                 </div>
               </div>
+
+              <RejectionLifecycleBanner
+                app={app}
+                onQuickDateUpdate={
+                  onUpdateApplication
+                    ? (newDate) => onUpdateApplication({ ...app, rejectedDate: newDate })
+                    : undefined
+                }
+              />
 
               {/* 14+ Days Stagnant Follow-Up Reminder */}
               {isStagnant && (
