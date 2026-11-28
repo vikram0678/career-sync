@@ -10,6 +10,7 @@ import GoalCountdown from './components/GoalCountdown';
 import GoalForm from './components/GoalForm';
 import ProfilePage from './components/ProfilePage';
 import KanbanBoard from './components/KanbanBoard';
+import { getTodayISO } from './utils/dateUtils';
 
 function FilterPanel({ filters, setFilters, availableRoles }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -34,14 +35,14 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
   };
 
   return (
-    <div 
+    <div
       className="glass"
-      style={{ 
-        padding: '16px 20px', 
-        borderRadius: '16px', 
-        marginBottom: '20px', 
-        display: 'flex', 
-        flexWrap: 'wrap', 
+      style={{
+        padding: '16px 20px',
+        borderRadius: '16px',
+        marginBottom: '20px',
+        display: 'flex',
+        flexWrap: 'wrap',
         gap: '14px',
         alignItems: 'flex-end',
         background: 'var(--glass-card)',
@@ -53,13 +54,13 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
           Start Date
         </label>
-        <input 
-          type="date" 
-          name="startDate" 
-          value={localFilters.startDate} 
-          onChange={handleChange} 
-          className="form-control" 
-          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        <input
+          type="date"
+          name="startDate"
+          value={localFilters.startDate}
+          onChange={handleChange}
+          className="form-control"
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }}
         />
       </div>
 
@@ -67,13 +68,13 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
           End Date
         </label>
-        <input 
-          type="date" 
-          name="endDate" 
-          value={localFilters.endDate} 
-          onChange={handleChange} 
-          className="form-control" 
-          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        <input
+          type="date"
+          name="endDate"
+          value={localFilters.endDate}
+          onChange={handleChange}
+          className="form-control"
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }}
         />
       </div>
 
@@ -81,11 +82,11 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
           Role
         </label>
-        <select 
-          name="role" 
-          value={localFilters.role} 
-          onChange={handleChange} 
-          className="form-control" 
+        <select
+          name="role"
+          value={localFilters.role}
+          onChange={handleChange}
+          className="form-control"
           style={{ padding: '7px 10px', fontSize: '0.85rem' }}
         >
           <option value="">All Roles</option>
@@ -97,11 +98,11 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
           Position Type
         </label>
-        <select 
-          name="jobType" 
-          value={localFilters.jobType || ''} 
-          onChange={handleChange} 
-          className="form-control" 
+        <select
+          name="jobType"
+          value={localFilters.jobType || ''}
+          onChange={handleChange}
+          className="form-control"
           style={{ padding: '7px 10px', fontSize: '0.85rem' }}
         >
           <option value="">All Types</option>
@@ -115,29 +116,29 @@ function FilterPanel({ filters, setFilters, availableRoles }) {
         <label style={{ fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
           Min Salary
         </label>
-        <input 
-          type="text" 
-          name="salary" 
-          value={localFilters.salary} 
-          onChange={handleChange} 
-          className="form-control" 
-          placeholder="e.g. 100k" 
-          style={{ padding: '7px 10px', fontSize: '0.85rem' }} 
+        <input
+          type="text"
+          name="salary"
+          value={localFilters.salary}
+          onChange={handleChange}
+          className="form-control"
+          placeholder="e.g. 100k"
+          style={{ padding: '7px 10px', fontSize: '0.85rem' }}
         />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '1px' }}>
-        <button 
-          onClick={handleApply} 
-          className="btn btn-primary" 
+        <button
+          onClick={handleApply}
+          className="btn btn-primary"
           style={{ padding: '7px 16px', fontSize: '0.84rem', fontWeight: '700' }}
         >
           Apply Filters
         </button>
         {Object.values(localFilters).some(v => v !== '') && (
-          <button 
-            onClick={handleClear} 
-            className="btn btn-secondary" 
+          <button
+            onClick={handleClear}
+            className="btn btn-secondary"
             style={{ padding: '7px 14px', fontSize: '0.84rem' }}
           >
             Reset
@@ -252,6 +253,10 @@ function LoginScreen() {
   );
 }
 
+const EXTENDED_SCHEMA_COLS = ['jobType', 'bond', 'rejectedDate'];
+const unsupportedDbCols = new Set();
+const pendingInsertsByAddedAt = new Map();
+
 function getLocalAppMeta() {
   try {
     return JSON.parse(localStorage.getItem('career_sync_app_meta') || '{}');
@@ -266,18 +271,66 @@ function saveLocalAppMeta(id, meta) {
     const map = getLocalAppMeta();
     map[id] = { ...(map[id] || {}), ...meta };
     localStorage.setItem('career_sync_app_meta', JSON.stringify(map));
-  } catch {}
+  } catch { }
 }
 
 function getEnrichedAppMeta(app) {
+  if (app.addedAt && pendingInsertsByAddedAt.has(app.addedAt)) {
+    const pendingMeta = pendingInsertsByAddedAt.get(app.addedAt);
+    saveLocalAppMeta(app.id, pendingMeta);
+    pendingInsertsByAddedAt.delete(app.addedAt);
+  }
   const localMeta = getLocalAppMeta();
   let localJobTypes = {};
-  try { localJobTypes = JSON.parse(localStorage.getItem('career_sync_job_types') || '{}'); } catch {}
+  try { localJobTypes = JSON.parse(localStorage.getItem('career_sync_job_types') || '{}'); } catch { }
   const appMeta = localMeta[app.id] || {};
   return {
     jobType: app.jobType || appMeta.jobType || localJobTypes[app.id] || (/(intern|internship|co-op|trainee)/i.test(app.role) ? 'internship' : 'job'),
-    bond: app.bond || appMeta.bond || ''
+    bond: app.bond || appMeta.bond || '',
+    rejectedDate: app.status === 'rejected' ? (app.rejectedDate || appMeta.rejectedDate || '') : ''
   };
+}
+
+/**
+ * Executes a Supabase write while automatically stripping extended columns
+ * that do not yet exist in the remote PostgreSQL schema (PGRST204),
+ * caching discovered missing columns for subsequent writes in the session.
+ */
+async function executeWithSchemaFallback(runQuery, payload) {
+  const sanitized = { ...payload };
+  for (const col of unsupportedDbCols) {
+    delete sanitized[col];
+  }
+
+  for (let attempt = 0; attempt <= EXTENDED_SCHEMA_COLS.length; attempt++) {
+    const result = await runQuery(sanitized);
+    const { error } = result;
+    if (!error) return result;
+
+    const msg = String(error.message || '');
+    const isSchemaError = error.code === 'PGRST204' || EXTENDED_SCHEMA_COLS.some(col => msg.includes(col));
+    if (!isSchemaError) return result;
+
+    const match = msg.match(/Could not find the '([^']+)' column/);
+    const missingCol = match?.[1];
+    if (missingCol && EXTENDED_SCHEMA_COLS.includes(missingCol) && missingCol in sanitized) {
+      unsupportedDbCols.add(missingCol);
+      delete sanitized[missingCol];
+      continue;
+    }
+
+    let strippedAny = false;
+    for (const col of EXTENDED_SCHEMA_COLS) {
+      if (col in sanitized) {
+        unsupportedDbCols.add(col);
+        delete sanitized[col];
+        strippedAny = true;
+      }
+    }
+    if (!strippedAny) return result;
+  }
+
+  return runQuery(sanitized);
 }
 
 function App() {
@@ -453,7 +506,8 @@ function App() {
           return {
             ...app,
             jobType: meta.jobType,
-            bond: meta.bond
+            bond: meta.bond,
+            rejectedDate: meta.rejectedDate
           };
         });
         setApplications(enriched);
@@ -600,32 +654,48 @@ function App() {
     }
 
     try {
+      const normalizedRejectedDate = newApp.status === 'rejected'
+        ? (newApp.rejectedDate || getTodayISO())
+        : '';
+      const addedAt = Date.now();
+
+      pendingInsertsByAddedAt.set(addedAt, {
+        jobType: newApp.jobType || 'job',
+        bond: newApp.bond || '',
+        rejectedDate: normalizedRejectedDate
+      });
+
       const insertPayload = {
         ...newApp,
+        rejectedDate: normalizedRejectedDate,
         resumeUrl: finalResumeUrl,
         screenshots: finalScreenshots,
         userId: user.id,
-        addedAt: Date.now()
+        addedAt
       };
 
-      let { data, error } = await supabase.from('applications').insert([insertPayload]).select().single();
+      const { data, error } = await executeWithSchemaFallback(
+        (payload) => supabase.from('applications').insert([payload]).select().single(),
+        insertPayload
+      );
 
-      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
-        const { jobType: _jt, bond: _b, ...sanitizedPayload } = insertPayload;
-        const retryResult = await supabase.from('applications').insert([sanitizedPayload]).select().single();
-        data = retryResult.data;
-        error = retryResult.error;
+      if (error) {
+        pendingInsertsByAddedAt.delete(addedAt);
+        throw error;
       }
-
-      if (error) throw error;
       if (data) {
+        pendingInsertsByAddedAt.delete(addedAt);
         const enriched = {
           ...data,
           jobType: data.jobType || newApp.jobType || 'job',
-          bond: data.bond || newApp.bond || ''
+          bond: data.bond || newApp.bond || '',
+          rejectedDate: normalizedRejectedDate
         };
-        saveLocalAppMeta(data.id, { jobType: enriched.jobType, bond: enriched.bond });
+        saveLocalAppMeta(data.id, {
+          jobType: enriched.jobType,
+          bond: enriched.bond,
+          rejectedDate: enriched.rejectedDate
+        });
         setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setFormType(false);
@@ -636,41 +706,63 @@ function App() {
   };
 
   const handleUpdateStatus = async (id, newStatus) => {
+    const existingApp = applications.find(a => a.id === id);
+    const prevRejectedDate = existingApp?.rejectedDate || '';
+    const nextRejectedDate = newStatus === 'rejected'
+      ? (prevRejectedDate || getTodayISO())
+      : '';
+
     try {
-      const { error } = await supabase.from('applications').update({ status: newStatus }).eq('id', id);
+      // Persist meta before remote update so Realtime events never overwrite with stale localStorage
+      saveLocalAppMeta(id, { rejectedDate: nextRejectedDate });
+
+      const { error } = await executeWithSchemaFallback(
+        (payload) => supabase.from('applications').update(payload).eq('id', id),
+        { status: newStatus, rejectedDate: nextRejectedDate }
+      );
       if (error) throw error;
-      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: newStatus, rejectedDate: nextRejectedDate } : a));
       if (selectedApp && selectedApp.id === id) {
-        setSelectedApp(prev => prev ? { ...prev, status: newStatus } : null);
+        setSelectedApp(prev => prev ? { ...prev, status: newStatus, rejectedDate: nextRejectedDate } : null);
       }
     } catch (error) {
+      saveLocalAppMeta(id, { rejectedDate: prevRejectedDate });
       console.error("Error updating status: ", error);
     }
   };
 
   const handleUpdateApplication = async (updatedApp) => {
-    try {
-      let { error } = await supabase.from('applications').update(updatedApp).eq('id', updatedApp.id);
+    const existingMeta = getLocalAppMeta()[updatedApp.id];
+    const normalizedRejectedDate = updatedApp.status === 'rejected'
+      ? (updatedApp.rejectedDate || getTodayISO())
+      : '';
+    const payloadWithRejected = {
+      ...updatedApp,
+      rejectedDate: normalizedRejectedDate
+    };
 
-      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
-        const { jobType: _jt, bond: _b, ...sanitized } = updatedApp;
-        const retryResult = await supabase.from('applications').update(sanitized).eq('id', updatedApp.id);
-        error = retryResult.error;
-      }
+    try {
+      // Persist meta before remote update so Realtime events preserve edited fields
+      saveLocalAppMeta(updatedApp.id, {
+        jobType: payloadWithRejected.jobType || 'job',
+        bond: payloadWithRejected.bond || '',
+        rejectedDate: normalizedRejectedDate
+      });
+
+      const { error } = await executeWithSchemaFallback(
+        (payload) => supabase.from('applications').update(payload).eq('id', updatedApp.id),
+        payloadWithRejected
+      );
 
       if (error) throw error;
 
-      saveLocalAppMeta(updatedApp.id, {
-        jobType: updatedApp.jobType || 'job',
-        bond: updatedApp.bond || ''
-      });
-
-      setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
+      setApplications(prev => prev.map(a => a.id === updatedApp.id ? payloadWithRejected : a));
       if (selectedApp && selectedApp.id === updatedApp.id) {
-        setSelectedApp(updatedApp);
+        setSelectedApp(payloadWithRejected);
       }
     } catch (error) {
+      if (existingMeta) saveLocalAppMeta(updatedApp.id, existingMeta);
       console.error("Error updating application: ", error);
       throw error;
     }
@@ -696,24 +788,24 @@ function App() {
   const handleUndoDelete = async () => {
     if (!recentlyDeleted) return;
     try {
-      let { data, error } = await supabase.from('applications').insert([{ ...recentlyDeleted }]).select().single();
-
-      // Graceful fallback if database schema does not have 'jobType' or 'bond' column yet
-      if (error && (error.code === 'PGRST204' || String(error.message).includes('jobType') || String(error.message).includes('bond'))) {
-        const { jobType: _jt, bond: _b, ...sanitized } = recentlyDeleted;
-        const retryResult = await supabase.from('applications').insert([sanitized]).select().single();
-        data = retryResult.data;
-        error = retryResult.error;
-      }
+      const { data, error } = await executeWithSchemaFallback(
+        (payload) => supabase.from('applications').insert([payload]).select().single(),
+        recentlyDeleted
+      );
 
       if (error) throw error;
       if (data) {
         const enriched = {
           ...data,
           jobType: data.jobType || recentlyDeleted.jobType || 'job',
-          bond: data.bond || recentlyDeleted.bond || ''
+          bond: data.bond || recentlyDeleted.bond || '',
+          rejectedDate: data.rejectedDate || recentlyDeleted.rejectedDate || ''
         };
-        saveLocalAppMeta(data.id, { jobType: enriched.jobType, bond: enriched.bond });
+        saveLocalAppMeta(data.id, {
+          jobType: enriched.jobType,
+          bond: enriched.bond,
+          rejectedDate: enriched.rejectedDate
+        });
         setApplications(prev => [enriched, ...prev.filter(a => a.id !== data.id)]);
       }
       setRecentlyDeleted(null);
@@ -816,7 +908,7 @@ function App() {
       alert("No applications to export yet!");
       return;
     }
-    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Salary", "Position Type", "Service Bond", "Track", "Resume Used"];
+    const headers = ["Role", "Company", "Careers URL", "Gmail Thread", "Meeting Link", "Applied Date", "Status", "Rejected Date", "Salary", "Position Type", "Service Bond", "Track", "Resume Used"];
     const rows = applications.map(app => [
       `"${(app.role || '').replace(/"/g, '""')}"`,
       `"${(app.website || '').replace(/"/g, '""')}"`,
@@ -825,6 +917,7 @@ function App() {
       `"${(app.meetingUrl || '').replace(/"/g, '""')}"`,
       `"${app.appliedDate || ''}"`,
       `"${app.status || ''}"`,
+      `"${app.status === 'rejected' ? (app.rejectedDate || '') : ''}"`,
       `"${(app.salary || '').replace(/"/g, '""')}"`,
       `"${app.jobType === 'internship' ? 'Internship' : app.jobType === 'contract' ? 'Contract' : 'Full-Time Job'}"`,
       `"${(app.bond || 'No Bond').replace(/"/g, '""')}"`,
@@ -898,7 +991,7 @@ function App() {
       if (selectedCompany && (app.website || 'Other').trim().toLowerCase() !== selectedCompany.toLowerCase()) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesSearch = 
+        const matchesSearch =
           (app.role && app.role.toLowerCase().includes(q)) ||
           (app.website && app.website.toLowerCase().includes(q)) ||
           (app.salary && app.salary.toLowerCase().includes(q)) ||
@@ -937,7 +1030,7 @@ function App() {
     if (selectedCompany && (app.website || 'Other').trim().toLowerCase() !== selectedCompany.toLowerCase()) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const matchesSearch = 
+      const matchesSearch =
         (app.role && app.role.toLowerCase().includes(q)) ||
         (app.website && app.website.toLowerCase().includes(q)) ||
         (app.salary && app.salary.toLowerCase().includes(q)) ||
@@ -1098,8 +1191,8 @@ function App() {
           </div>
         </div>
 
-        <div 
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: 1, position: 'relative' }} 
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flex: 1, position: 'relative' }}
           ref={profileMenuRef}
           onMouseEnter={handleProfileMouseEnter}
           onMouseLeave={handleProfileMouseLeave}
@@ -1147,7 +1240,7 @@ function App() {
 
           {/* Profile Hover Dropdown Preview Card */}
           {isProfileMenuOpen && (
-            <div 
+            <div
               className="glass glass-panel profile-dropdown-menu"
               onMouseEnter={handleProfileMouseEnter}
               onMouseLeave={handleProfileMouseLeave}
@@ -1378,11 +1471,11 @@ function App() {
                       style={{
                         padding: '7px 12px',
                         fontSize: '0.82rem',
-                        background: selectedCompany 
-                          ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)' 
+                        background: selectedCompany
+                          ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)'
                           : 'var(--glass-bg)',
-                        border: selectedCompany 
-                          ? '1px solid rgba(56, 189, 248, 0.45)' 
+                        border: selectedCompany
+                          ? '1px solid rgba(56, 189, 248, 0.45)'
                           : '1px solid var(--glass-border)',
                         color: selectedCompany ? 'var(--accent-cyan)' : 'var(--text-muted)',
                         fontWeight: selectedCompany ? '800' : '600',
@@ -1421,13 +1514,13 @@ function App() {
                           <X size={11} />
                         </span>
                       ) : (
-                        <ChevronDown 
-                          size={13} 
-                          style={{ 
-                            transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'none', 
+                        <ChevronDown
+                          size={13}
+                          style={{
+                            transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'none',
                             transition: 'transform 0.2s ease',
-                            opacity: 0.7 
-                          }} 
+                            opacity: 0.7
+                          }}
                         />
                       )}
                     </button>
@@ -1501,8 +1594,8 @@ function App() {
                                 autoFocus
                               />
                               {companySearchQuery && (
-                                <X 
-                                  size={13} 
+                                <X
+                                  size={13}
                                   onClick={() => setCompanySearchQuery('')}
                                   style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-muted)' }}
                                 />
@@ -1590,11 +1683,11 @@ function App() {
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                                     <CompanyAvatar company={c.name} url={c.url} size={24} borderRadius={6} />
-                                    <span style={{ 
-                                      whiteSpace: 'nowrap', 
-                                      overflow: 'hidden', 
+                                    <span style={{
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
                                       textOverflow: 'ellipsis',
-                                      maxWidth: '150px' 
+                                      maxWidth: '150px'
                                     }}>
                                       {c.name}
                                     </span>
