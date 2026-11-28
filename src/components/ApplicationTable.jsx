@@ -1,5 +1,6 @@
-import { Calendar, Trash2, DollarSign, ExternalLink, Eye, Clock, Briefcase, Mail, Video } from 'lucide-react';
+import { Calendar, CalendarX, Trash2, DollarSign, ExternalLink, Eye, Clock, Briefcase, Mail, Video } from 'lucide-react';
 import CompanyAvatar from './CompanyAvatar';
+import { formatShortDate, getCooloffInfo, getTurnaroundDays } from '../utils/dateUtils';
 
 function ApplicationTable({ applications, onAppClick, onDelete }) {
   if (!applications || applications.length === 0) {
@@ -56,6 +57,8 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
           {applications.map((app, index) => {
             const daysSince = app.appliedDate ? Math.floor((new Date() - new Date(app.appliedDate)) / (1000 * 60 * 60 * 24)) : 0;
             const isStagnant = app.status === 'applied' && daysSince >= 14;
+            const turnaroundDays = app.status === 'rejected' ? getTurnaroundDays(app.appliedDate, app.rejectedDate) : null;
+            const cooloff = app.status === 'rejected' ? getCooloffInfo(app.rejectedDate) : null;
 
             return (
               <tr 
@@ -224,30 +227,69 @@ function ApplicationTable({ applications, onAppClick, onDelete }) {
                   </div>
                 </td>
 
-                {/* Status Badge & Stagnant Indicator */}
+                {/* Status Badge, Stagnant Indicator & Rejected Date */}
                 <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span className={`status-badge status-${app.status}`}>
-                      {app.status}
-                    </span>
-                    {isStagnant && (
-                      <span 
-                        style={{ 
-                          background: 'rgba(245, 158, 11, 0.15)', 
-                          color: '#f59e0b', 
-                          border: '1px solid rgba(245, 158, 11, 0.35)', 
-                          fontSize: '0.72rem', 
-                          padding: '2px 8px', 
-                          borderRadius: '999px',
-                          fontWeight: '700',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        title={`${daysSince} days since applied. Time to send a follow-up!`}
-                      >
-                        <Clock size={11} /> 14d+ follow up
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className={`status-badge status-${app.status}`}>
+                        {app.status}
                       </span>
+                      {isStagnant && (
+                        <span 
+                          style={{ 
+                            background: 'rgba(245, 158, 11, 0.15)', 
+                            color: '#f59e0b', 
+                            border: '1px solid rgba(245, 158, 11, 0.35)', 
+                            fontSize: '0.72rem', 
+                            padding: '2px 8px', 
+                            borderRadius: '999px',
+                            fontWeight: '700',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title={`${daysSince} days since applied. Time to send a follow-up!`}
+                        >
+                          <Clock size={11} /> 14d+ follow up
+                        </span>
+                      )}
+                    </div>
+                    {app.status === 'rejected' && (
+                      app.rejectedDate ? (
+                        <span
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            color: '#f87171',
+                            border: '1px solid rgba(239, 68, 68, 0.28)',
+                            fontSize: '0.69rem',
+                            padding: '1px 7px',
+                            borderRadius: '6px',
+                            fontWeight: '700',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title={cooloff?.tooltip || `Rejected on ${app.rejectedDate}`}
+                        >
+                          <CalendarX size={10} />
+                          Rejected {formatShortDate(app.rejectedDate)}
+                          {turnaroundDays !== null ? ` · ${turnaroundDays}d` : ''}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            color: 'var(--text-sub)',
+                            fontWeight: '600',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Click row to set the rejection date"
+                        >
+                          <CalendarX size={10} /> Click to set date
+                        </span>
+                      )
                     )}
                   </div>
                 </td>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { 
   Calendar, 
+  CalendarX,
   Trash2, 
   DollarSign, 
   GripVertical,
@@ -11,6 +12,7 @@ import {
   Video
 } from 'lucide-react';
 import CompanyAvatar from './CompanyAvatar';
+import { formatShortDate, getCooloffInfo, getTurnaroundDays } from '../utils/dateUtils';
 
 const COLUMNS = [
   { 
@@ -191,6 +193,8 @@ function KanbanBoard({
                   const isBeingDragged = draggedAppId === app.id;
                   const daysSince = app.appliedDate ? Math.floor((new Date() - new Date(app.appliedDate)) / (1000 * 60 * 60 * 24)) : 0;
                   const isStagnant = app.status === 'applied' && daysSince >= 14;
+                  const turnaroundDays = app.status === 'rejected' ? getTurnaroundDays(app.appliedDate, app.rejectedDate) : null;
+                  const cooloff = app.status === 'rejected' ? getCooloffInfo(app.rejectedDate) : null;
 
                   return (
                     <div
@@ -319,6 +323,53 @@ function KanbanBoard({
                         }}>
                           <Clock size={11} /> 14d+ follow up
                         </div>
+                      )}
+
+                      {/* Rejection Date & Turnaround Chip */}
+                      {app.status === 'rejected' && (
+                        app.rejectedDate ? (
+                          <div
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              color: '#f87171',
+                              border: '1px solid rgba(239, 68, 68, 0.25)',
+                              fontSize: '0.7rem',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              marginBottom: '10px'
+                            }}
+                            title={cooloff?.tooltip || `Rejected on ${app.rejectedDate}`}
+                          >
+                            <CalendarX size={11} />
+                            <span>Rejected {formatShortDate(app.rejectedDate)}</span>
+                            {turnaroundDays !== null && (
+                              <span style={{ opacity: 0.78 }}>· {turnaroundDays}d</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.04)',
+                              color: 'var(--text-sub)',
+                              border: '1px dashed var(--border-color)',
+                              fontSize: '0.68rem',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              marginBottom: '10px'
+                            }}
+                            title="Open card to set the rejection date"
+                          >
+                            <CalendarX size={11} /> Click card to set date
+                          </div>
+                        )
                       )}
 
                       {/* Direct Communication / Meeting Link Badges */}
